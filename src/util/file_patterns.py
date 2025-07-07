@@ -18,6 +18,7 @@ from typing import List, Tuple
 class TokenType(Enum):
     STATIC = 0
     INCREMENTAL = 1
+    PHRASES = 2
 
 # Used to help FilePattern
 @dataclass
@@ -26,6 +27,7 @@ class Token:
     literal: str = ""
     num: int = 0
     increment: Tuple[int, int, int] = (0, 0, 1)
+    phrases: List[str] = field(default_factory=list)
 
 
 
@@ -45,6 +47,9 @@ class FilePattern:
             elif token.type == TokenType.INCREMENTAL:
                 parts.append(token.literal + str(token.num))
 
+            elif token.type == TokenType.PHRASES:
+                parts.append(token.literal + token.phrases[token.num])
+
         return "".join(parts)
 
     # Increments the numbers that can be incremented (if there are any), from right to left
@@ -52,7 +57,7 @@ class FilePattern:
     def increment(self):
         for token in reversed(self.tokens):
 
-            if token.type == TokenType.INCREMENTAL:
+            if token.type == TokenType.INCREMENTAL or token.type == TokenType.PHRASES:
 
                 if token.num >= token.increment[1]:
                     token.num = token.increment[0]
@@ -68,7 +73,7 @@ class FilePattern:
     def decrement(self):
         for token in reversed(self.tokens):
 
-            if token.type == TokenType.INCREMENTAL:
+            if token.type == TokenType.INCREMENTAL or token.type == TokenType.PHRASES:
 
                 if token.num <= token.increment[0]:
                     token.num = token.increment[1]
@@ -79,6 +84,14 @@ class FilePattern:
                     return True
 
         return False
+
+    # Returns an array of all the current incremental numbers
+    def get_incremental_numbers(self):
+        numbers = []
+        for token in self.tokens:
+            if token.type == TokenType.INCREMENTAL or token.type == TokenType.PHRASES:
+                numbers.append(token.num)
+        return numbers
 
 
 def get_file_path(file_pattern: FilePattern, folder: str = ""):

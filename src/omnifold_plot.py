@@ -174,6 +174,7 @@ op.data_dir = "../../data"
 op.nat_data_dir = "mock"
 op.syn_data_dir = "mock"
 op.weights_dir = "weights"
+op.re_weights_dir = "re_weights"
 op.plots_dir = "plots"
 
 # File Pattern Options:
@@ -207,11 +208,20 @@ op.weights_file_pattern = FilePattern([
     Token(TokenType.INCREMENTAL, '', 1, (1, 10, 1)),
     Token(TokenType.STATIC, '.npy')
 ])
+op.re_weight_file_pattern = FilePattern([
+    Token(TokenType.STATIC, 'Syn'),
+    Token(TokenType.INCREMENTAL, '', 1, (1, 2, 1)),
+    Token(TokenType.STATIC, '_'),
+    Token(TokenType.INCREMENTAL, '', 1, (1, 5, 1)),
+    Token(TokenType.STATIC, 'Percent_Test'),
+    Token(TokenType.INCREMENTAL, '', 1, (1, 10, 1)),
+    Token(TokenType.STATIC, '.npy')
+])
 op.plots_file_pattern = FilePattern([
     Token(TokenType.INCREMENTAL, 'syn', 1, (1, 2, 1)),
     Token(TokenType.INCREMENTAL, '.', 1, (1, 5, 1)),
-    Token(TokenType.INCREMENTAL, 'Percent.', 0, (0, 80, 20)),
-    Token(TokenType.INCREMENTAL, '-', 20, (20, 100, 20)),
+    Token(TokenType.STATIC, 'Percent.'),
+    Token(TokenType.PHRASES, '', 0, (0, 4, 1), ['0-20', '20-40', '40-60', '60-80', '80-100']),
     Token(TokenType.STATIC, 'GeV.png')
 ])
 
@@ -231,58 +241,5 @@ import src.util.plot as plot
 nat_data, nat_weights = get_nat_150000_data(get_file_path(op.nat_data_file_pattern, op.nat_data_dir))
 
 
-# Loop through all files generating plots
-##############################
-"""while (True):
-    # Get syn data
-    syn_data = get_syn_150000_data(get_file_path(op.syn_data_file_pattern, op.syn_data_dir))
-
-    print('\n' + op.syn_data_file_pattern.get_full_pattern())
-
-    while (True):
-        # Loop through all the syn weights and calculate avg
-        iteration = 0
-        step = 0
-        syn_weight = get_syn_150000_weights(get_file_path(op.weights_file_pattern, op.weights_dir))
-
-        print('   ' + op.weights_file_pattern.get_full_pattern())
-
-        while (True):
-            weight = syn_weight[iteration, step]
-
-            # Basic checks before moving on
-            if syn_data.shape != weight.shape:
-                raise Exception('Shape mismatch between syn data and weights. ' +
-                                op.syn_data_file_pattern.get_full_pattern() + ' ' +
-                                op.weights_file_pattern.get_full_pattern())
-
-            print('        ' + str(iteration) + '  ' + str(step))
-
-            if iteration >= 4 and step >= 1:
-                break
-            elif step >= 1:
-                step = 0
-                iteration += 1
-            else:
-                step += 1
-
-        if not op.weights_file_pattern.increment():
-            break
-
-    if not op.syn_data_file_pattern.increment():
-        break"""
 
 plot.plot_tests_for_iteration_error_over_energy()
-
-# Temp notes for wdc
-"""
-
-Plotting:
-
-Y-axis becomes the %error, and the X-axis becomes Gev. Each point is the average of all tests for a given iteration
-
-for each iteration in weights, we only care about the 2nd step
-
-make 5 plots, one per energy bin, each on containing the 5 iterations
-
-"""

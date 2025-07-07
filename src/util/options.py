@@ -42,6 +42,7 @@ data_dir = '../../data'
 nat_data_dir = 'mock'
 syn_data_dir = 'mock'
 weights_dir = 'weights'
+re_weights_dir = 're_weights'
 plots_dir = 'plots'
 
 nat_data_file_pattern = FilePattern([
@@ -55,6 +56,15 @@ syn_data_file_pattern = FilePattern([
     Token(TokenType.STATIC, 'Percent.Logweighted2.N150000.root'),
 ])
 weights_file_pattern = FilePattern([
+    Token(TokenType.STATIC, 'Syn'),
+    Token(TokenType.INCREMENTAL, '', 1, (1, 2, 1)),
+    Token(TokenType.STATIC, '_'),
+    Token(TokenType.INCREMENTAL, '', 1, (1, 5, 1)),
+    Token(TokenType.STATIC, 'Percent_Test'),
+    Token(TokenType.INCREMENTAL, '', 1, (1, 10, 1)),
+    Token(TokenType.STATIC, '.npy')
+])
+re_weight_file_pattern = FilePattern([
     Token(TokenType.STATIC, 'Syn'),
     Token(TokenType.INCREMENTAL, '', 1, (1, 2, 1)),
     Token(TokenType.STATIC, '_'),

@@ -133,6 +133,9 @@ plt.show()"""
 # Do this to check if the running version of python has all the right libraries
 import src.util.imports
 
+# Used to create dynamic file names
+from src.util.file_patterns import TokenType, Token, FilePattern, get_file_path
+
 
 
 
@@ -140,17 +143,15 @@ import src.util.imports
 ############################################################
 import src.util.options as op
 
-# Used to create dynamic file names
-from src.util.file_patterns import TokenType, Token, FilePattern, get_file_path
-
 
 # Plot type, choose from the options in PlotType()
 ##############################
 
 # Plot Type Options:
 """
-ALL   : 1 : Used to plot all main options
-debug : 0 : Only used for testing purposes
+ALL                         : 1 : Used to plot all main options
+TEST_ITERATION_ERROR        : 2 : Sums all the tests for each iteration and plots the error %
+debug                       : 0 : Only used for testing purposes
 """
 
 # If this is set to something not in PlotType(), the program will exit
@@ -207,11 +208,11 @@ op.weights_file_pattern = FilePattern([
     Token(TokenType.STATIC, '.npy')
 ])
 op.plots_file_pattern = FilePattern([
-    Token(TokenType.STATIC, 'plot.'),
-    Token(TokenType.INCREMENTAL, '', 1, (1, 2, 1)),
-    Token(TokenType.STATIC, '.'),
-    Token(TokenType.INCREMENTAL, '', 1, (1, 5, 1)),
-    Token(TokenType.STATIC, 'Percent.Logweighted2.N150000.png'),
+    Token(TokenType.INCREMENTAL, 'syn', 1, (1, 2, 1)),
+    Token(TokenType.INCREMENTAL, '.', 1, (1, 5, 1)),
+    Token(TokenType.INCREMENTAL, 'Percent.', 0, (0, 80, 20)),
+    Token(TokenType.INCREMENTAL, '-', 20, (20, 100, 20)),
+    Token(TokenType.STATIC, 'GeV.png')
 ])
 
 
@@ -223,6 +224,7 @@ from src.util.data import get_nat_150000_data, get_syn_150000_data, get_syn_1500
 
 # Used for plotting
 import matplotlib.pyplot as plt
+import src.util.plot as plot
 
 
 # Get nat data (in this case there's only one nat file
@@ -231,7 +233,7 @@ nat_data, nat_weights = get_nat_150000_data(get_file_path(op.nat_data_file_patte
 
 # Loop through all files generating plots
 ##############################
-while (True):
+"""while (True):
     # Get syn data
     syn_data = get_syn_150000_data(get_file_path(op.syn_data_file_pattern, op.syn_data_dir))
 
@@ -268,5 +270,19 @@ while (True):
             break
 
     if not op.syn_data_file_pattern.increment():
-        break
+        break"""
 
+plot.plot_tests_for_iteration_error_over_energy()
+
+# Temp notes for wdc
+"""
+
+Plotting:
+
+Y-axis becomes the %error, and the X-axis becomes Gev. Each point is the average of all tests for a given iteration
+
+for each iteration in weights, we only care about the 2nd step
+
+make 5 plots, one per energy bin, each on containing the 5 iterations
+
+"""

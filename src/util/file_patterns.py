@@ -25,7 +25,7 @@ class Token:
     type: TokenType
     literal: str = ""
     num: int = 0
-    increment_range: Tuple[int, int, int] = (0, 0, 1)
+    increment: Tuple[int, int, int] = (0, 0, 1)
 
 
 
@@ -54,12 +54,28 @@ class FilePattern:
 
             if token.type == TokenType.INCREMENTAL:
 
-                if token.num >= token.increment_range[1]:
-                    token.num = token.increment_range[0]
+                if token.num >= token.increment[1]:
+                    token.num = token.increment[0]
                     continue
 
                 else:
-                    token.num += token.increment_range[2]
+                    token.num += token.increment[2]
+                    return True
+
+        return False
+
+    # Opposite functionality of increment
+    def decrement(self):
+        for token in reversed(self.tokens):
+
+            if token.type == TokenType.INCREMENTAL:
+
+                if token.num <= token.increment[0]:
+                    token.num = token.increment[1]
+                    continue
+
+                else:
+                    token.num -= token.increment[2]
                     return True
 
         return False

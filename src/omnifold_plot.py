@@ -1,24 +1,22 @@
-# This is the main file for making omnifold plots
-
-# Dictionary:
-"""
+# This is the main launch file, containing settings, documentation, and execution calls
 
 
 
-"""
+########################################################################################################################
 
-# Used to create dynamic file names
+# Imports
+
+########################################################################################################################
+
+
+
 from startrace import *
 
-# Do this to check if the running version of python has all the right libraries
 from src.util.imports import check_imports
 if not check_imports():
     exit(1)
 
-# Used to get the working dir
 import src.util.data as data
-
-# Used to draw plots and call worker functions
 import src.util.plot as plot
 
 
@@ -70,7 +68,7 @@ if 'Main settings':
     
     This plot will mainly give insight on weighted vs re-weighted performance, focusing on bin performance
     """
-    plot_syn_error_by_bin = True
+    plot_syn_error_by_bin = False
 
 
 
@@ -101,9 +99,8 @@ if 'SEI options':
     # This just shifts the iteration points on the x-axis to make the plot readable
     sei_shift_distance = 0.5
     
-    # This bool will re-use the above settings to graph the combined results (average all iterations)
-    sei_plot_combined = False
-    print("SEI requires plot combined code")
+    # This bool will re-use the above settings to graph the combined results (average all bins)
+    sei_plot_combined = True
     
     # Bool to graph standard deviation error bars
     sei_graph_error_bars = True
@@ -163,7 +160,15 @@ if 'SEI options':
         Token(bins_str),
         Token('GeV.png')
     ])
-    
+
+    # Automate alternate file pat name when sei_plot_combined == True
+    if sei_plot_combined:
+        sei_plot_file_pat = Pattern([
+            Token('syn', 1, Iter(1, sei_num_syn_datasets, 1)),
+            Token('.', 1, Iter(1, sei_num_percent_deviations, 1)),
+            Token('Percent.png')
+        ])
+
     
     # SEI compile options
     ##############################
@@ -208,10 +213,6 @@ if 'SEB options':
     # The distance between any two data points per iteration, if there are any
     # This just shifts the iteration points on the x-axis to make the plot readable
     seb_shift_distance = 5
-
-    # This bool will re-use the above settings to graph the combined results (average all files)
-    seb_plot_combined = False
-    print("SEB requires plot combined code")
 
     # Bool to graph standard deviation error bars
     seb_graph_error_bars = True
@@ -287,7 +288,6 @@ if 'SEB options':
         seb_plot_weighted, seb_weighted_color,
         seb_plot_re_weighted, seb_re_weighted_color,
         seb_shift_distance,
-        seb_plot_combined,
         seb_graph_error_bars,
         seb_bins_start, seb_bins_end, seb_bins_step,
         seb_num_syn_datasets, seb_num_percent_deviations, seb_num_tests, seb_num_iterations, seb_num_datapoints,

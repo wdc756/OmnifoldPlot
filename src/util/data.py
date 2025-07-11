@@ -1,22 +1,8 @@
-# This file holds methods to process the data located in root/data
+# This file helps with data and files
 
-# Dictionary:
-"""
-
-
-
-"""
-
-# Used to test dirs and filepaths
 import os
-
-# Used for file patterns
 from startrace import *
-
-# Used to help pass large amounts of data around
 from dataclasses import dataclass
-
-# Used to read from files
 import uproot
 import numpy as np
 
@@ -45,6 +31,7 @@ def get_file_path(dirs: list[str]):
     for d in dirs:
         path = os.path.join(path, d)
     return path
+
 
 
 @dataclass
@@ -98,8 +85,6 @@ class PlotSEBOptions():
 
     shift_distance: float
 
-    plot_combined: bool
-
     plot_error_bars: bool
 
     bins_start: int
@@ -125,7 +110,6 @@ class PlotSEBOptions():
     weight_file_pat: Pattern
     re_weight_file_pat: Pattern
     error_plot_file_pat: Pattern
-
 
 
 

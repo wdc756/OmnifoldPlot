@@ -40,9 +40,10 @@ import src.util.plot as plot
 if 'Main settings':
 
     # Overrides all bools in this section to graph everything when set to True
-    graph_all = False
+    plot_all = False
 
     # Will be passed to other functions, by default returns the dir above this file (omnifold_plot.py)
+    # To set a custom base dir, pass it into the function as a string
     base_dir = data.get_base_dir()
     # Where your data files are kept
     data_dir = 'data'
@@ -102,6 +103,7 @@ if 'SEI options':
     
     # This bool will re-use the above settings to graph the combined results (average all iterations)
     sei_plot_combined = False
+    print("SEI requires plot combined code")
     
     # Bool to graph standard deviation error bars
     sei_graph_error_bars = True
@@ -127,7 +129,7 @@ if 'SEI options':
     sei_syn_data_dir = 'mock'
     sei_weight_dir = 'weights'
     sei_re_weight_dir = 're_weights'
-    sei_plot_dir = 'plots'
+    sei_plot_dir = 'plots/iterations'
     
     sei_nat_file_pat = Pattern([
         Token('mockdata.nat.Logweighted2.N150000.root'),
@@ -189,109 +191,112 @@ if 'SEI options':
 
 
 
-# if 'SEB options':
+if 'SEB options':
 
-# SEB Main control vars
-##############################
-
-
-# Bool to graph unweighted synthetic data
-seb_plot_unweighted = False
-seb_color = '#2ecc71'
-
-# Bool to graph omnifold-weighted syn data
-seb_plot_weighted = True
-seb_weighted_color = '#3498db'
-
-# Bool to plot pre-weighted omnifold-weighted syn data
-seb_plot_re_weighted = True
-seb_re_weighted_color = '#e74c3c'
-
-# The distance between any two data points per iteration, if there are any
-# This just shifts the iteration points on the x-axis to make the plot readable
-seb_shift_distance = 0.5
-
-# This bool will re-use the above settings to graph the combined results (average all iterations)
-seb_plot_combined = False
-
-# Bool to graph standard deviation error bars
-seb_graph_error_bars = True
-
-# Binning vars
-seb_bins_start = 0
-seb_bins_end = 100
-seb_bins_step = 20
-
-# Omnifold training vars
-seb_num_syn_datasets = 2
-seb_num_percent_deviations = 5
-seb_num_tests = 10
-seb_num_iterations = 5
-seb_num_datapoints = 150000
+    # SEB Main control vars
+    ##############################
 
 
-# SEB File vars
-##############################
+    # Bool to graph omnifold-weighted syn data
+    seb_plot_weighted = True
+    seb_weighted_color = '#3498db'
+
+    # Bool to plot pre-weighted omnifold-weighted syn data
+    seb_plot_re_weighted = True
+    seb_re_weighted_color = '#e74c3c'
+
+    # The distance between any two data points per iteration, if there are any
+    # This just shifts the iteration points on the x-axis to make the plot readable
+    seb_shift_distance = 5
+
+    # This bool will re-use the above settings to graph the combined results (average all files)
+    seb_plot_combined = False
+    print("SEB requires plot combined code")
+
+    # Bool to graph standard deviation error bars
+    seb_graph_error_bars = True
+
+    # Binning vars
+    seb_bins_start = 0
+    seb_bins_end = 100
+    seb_bins_step = 20
+
+    # Omnifold training vars
+    seb_num_syn_datasets = 2
+    seb_num_percent_deviations = 5
+    seb_num_tests = 10
+    seb_num_iterations = 5
+    seb_num_datapoints = 150000
+
+    # Iterations to graph
+    seb_iterations_to_plot = []
+    for i in range(1, seb_num_iterations + 1):
+        seb_iterations_to_plot.append(i)
 
 
-seb_nat_data_dir = 'mock'
-seb_syn_data_dir = 'mock'
-seb_weight_dir = 'weights'
-seb_re_weight_dir = 're_weights'
-seb_plot_dir = 'plots'
-
-seb_nat_file_pat = Pattern([
-    Token('mockdata.nat.Logweighted2.N150000.root'),
-])
-seb_syn_file_pat = Pattern([
-    Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
-    Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
-    Token('Percent.Logweighted2.N150000.root')
-])
-seb_weight_file_pat = Pattern([
-    Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
-    Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
-    Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
-    Token('.npy')
-])
-seb_re_weight_file_pat = Pattern([
-    Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
-    Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
-    Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
-    Token('.npy')
-])
-
-# Automate bin plot names
-bins_str = []
-for i in range(seb_bins_start, seb_bins_end, seb_bins_step):
-    bins_str.append(str(i) + '-' + str(i + seb_bins_step))
-seb_plot_file_pat = Pattern([
-    Token('syn', 1, Iter(1, seb_num_syn_datasets, 1)),
-    Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
-    Token('Percent.'),
-    Token(bins_str),
-    Token('GeV.png')
-])
+    # SEB File vars
+    ##############################
 
 
-# SEB compile options
-##############################
+    seb_nat_data_dir = 'mock'
+    seb_syn_data_dir = 'mock'
+    seb_weight_dir = 'weights'
+    seb_re_weight_dir = 're_weights'
+    seb_plot_dir = 'plots/bins'
+
+    seb_nat_file_pat = Pattern([
+        Token('mockdata.nat.Logweighted2.N150000.root'),
+    ])
+    seb_syn_file_pat = Pattern([
+        Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+        Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
+        Token('Percent.Logweighted2.N150000.root')
+    ])
+    seb_weight_file_pat = Pattern([
+        Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+        Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
+        Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
+        Token('.npy')
+    ])
+    seb_re_weight_file_pat = Pattern([
+        Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+        Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
+        Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
+        Token('.npy')
+    ])
+
+    # Automate iteration names
+    iterations_str = []
+    for i in seb_iterations_to_plot:
+        iterations_str.append(str(i))
+    seb_plot_file_pat = Pattern([
+        Token('syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+        Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
+        Token('Percent.Iteration'),
+        Token(iterations_str),
+        Token('.png')
+    ])
 
 
-# In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
-plot_seb_options = data.PlotSEIOptions(
-    seb_plot_unweighted, seb_color,
-    seb_plot_weighted, seb_weighted_color,
-    seb_plot_re_weighted, seb_re_weighted_color,
-    seb_shift_distance,
-    seb_plot_combined,
-    seb_graph_error_bars,
-    seb_bins_start, seb_bins_end, seb_bins_step,
-    seb_num_syn_datasets, seb_num_percent_deviations, seb_num_tests, seb_num_iterations, seb_num_datapoints,
-    seb_nat_data_dir, seb_syn_data_dir, seb_weight_dir, seb_re_weight_dir, seb_plot_dir,
-    seb_nat_file_pat, seb_syn_file_pat, seb_weight_file_pat, seb_re_weight_file_pat,
-    seb_plot_file_pat,
-)
+    # SEB compile options
+    ##############################
+
+
+    # In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
+    plot_seb_options = data.PlotSEBOptions(
+        seb_plot_weighted, seb_weighted_color,
+        seb_plot_re_weighted, seb_re_weighted_color,
+        seb_shift_distance,
+        seb_plot_combined,
+        seb_graph_error_bars,
+        seb_bins_start, seb_bins_end, seb_bins_step,
+        seb_num_syn_datasets, seb_num_percent_deviations, seb_num_tests, seb_num_iterations, seb_num_datapoints,
+        seb_iterations_to_plot,
+        seb_nat_data_dir, seb_syn_data_dir, seb_weight_dir, seb_re_weight_dir, seb_plot_dir,
+        seb_nat_file_pat, seb_syn_file_pat, seb_weight_file_pat, seb_re_weight_file_pat,
+        seb_plot_file_pat,
+    )
+
 
 
 ########################################################################################################################
@@ -302,6 +307,10 @@ plot_seb_options = data.PlotSEIOptions(
 
 
 
-# Handles syn error graphs
-plot.plot_sei(plot_sei_options, data_dir)
+if plot_syn_error_by_iteration or plot_all:
+    plot.plot_sei(plot_sei_options, data_dir)
+
+
+if plot_syn_error_by_bin or plot_all:
+    plot.plot_seb(plot_seb_options, data_dir)
 

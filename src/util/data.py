@@ -15,7 +15,6 @@ from startrace import *
 
 # Used to help pass large amounts of data around
 from dataclasses import dataclass
-from typing import Optional
 
 # Used to read from files
 import uproot
@@ -23,10 +22,15 @@ import numpy as np
 
 
 _cached_base_dir = None
-def get_base_dir():
+def get_base_dir(new_base_dir: str=''):
     global _cached_base_dir
+
+    if new_base_dir != '':
+        _cached_base_dir = new_base_dir
+
     if _cached_base_dir is not None:
         return _cached_base_dir
+
     path = os.path.dirname(os.path.abspath(__file__))
     _cached_base_dir = os.path.join(path, '../../')
     return _cached_base_dir
@@ -81,6 +85,47 @@ class PlotSEIOptions():
     weight_file_pat: Pattern
     re_weight_file_pat: Pattern
     error_plot_file_pat: Pattern
+
+
+
+@dataclass
+class PlotSEBOptions():
+    plot_weighted_syn_error: bool
+    weighted_color: str
+
+    plot_re_weighted_syn_error: bool
+    re_weighted_color: str
+
+    shift_distance: float
+
+    plot_combined: bool
+
+    plot_error_bars: bool
+
+    bins_start: int
+    bins_end: int
+    bins_step: int
+
+    num_syn_datasets: int
+    num_percent_deviations: int
+    num_tests: int
+    num_iterations: int
+    num_datapoints: int
+
+    iterations_to_plot: list[int]
+
+    nat_data_dir: str
+    syn_data_dir: str
+    weight_dir: str
+    re_weight_dir: str
+    plot_dir: str
+
+    nat_file_pat: Pattern
+    syn_file_pat: Pattern
+    weight_file_pat: Pattern
+    re_weight_file_pat: Pattern
+    error_plot_file_pat: Pattern
+
 
 
 

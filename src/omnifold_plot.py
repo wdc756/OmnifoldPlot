@@ -68,7 +68,7 @@ if 'Main settings':
     
     This plot will mainly give insight on weighted vs re-weighted performance, focusing on bin performance
     """
-    plot_syn_error_by_bin = False
+    plot_syn_error_by_bin = True
 
 
 
@@ -229,10 +229,10 @@ if 'SEB options':
     seb_num_iterations = 5
     seb_num_datapoints = 150000
 
-    # Iterations to graph
-    seb_iterations_to_plot = []
-    for i in range(1, seb_num_iterations + 1):
-        seb_iterations_to_plot.append(i)
+    # Iterations to graph - to use all, either manually enter or remove all entries and uncomment the for loop
+    seb_iterations_to_plot = [5]
+    # for i in range(1, seb_num_iterations + 1):
+    #     seb_iterations_to_plot.append(i)
 
 
     # SEB File vars

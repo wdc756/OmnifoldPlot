@@ -506,7 +506,8 @@ def _seb_plot_iterations(op, num_bins, bin_idx, bins, weighted_nat, weighted_syn
 
     bin_centers = 0.5 * (bins[:-1] + bins[1:])
 
-    for iteration in range(op.num_iterations):
+    for iteration in op.iterations_to_plot:
+        iteration = iteration - 1
         _seb_plot_weighted_syn(op, bin_centers, weighted_mean_error, weighted_std_error, iteration)
         _seb_plot_re_weighted_syn(op, bin_centers, re_weighted_mean_error, re_weighted_std_error, iteration)
 

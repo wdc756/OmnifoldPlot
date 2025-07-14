@@ -35,7 +35,7 @@ def get_file_path(dirs: list[str]):
 
 
 @dataclass
-class PlotSEIOptions():
+class PlotSEIOptions:
     plot_syn_error: bool
     syn_color: str
 
@@ -76,7 +76,7 @@ class PlotSEIOptions():
 
 
 @dataclass
-class PlotSEBOptions():
+class PlotSEBOptions:
     plot_weighted_syn_error: bool
     weighted_color: str
 

@@ -7,30 +7,28 @@ import uproot
 import numpy as np
 
 
-_cached_base_dir = None
-def get_base_dir(new_base_dir: str=''):
-    global _cached_base_dir
 
-    if new_base_dir != '':
-        _cached_base_dir = new_base_dir
+########################################################################################################################
 
-    if _cached_base_dir is not None:
-        return _cached_base_dir
+# Synthetic Error plot options
 
-    path = os.path.dirname(os.path.abspath(__file__))
-    _cached_base_dir = os.path.join(path, '../../')
-    return _cached_base_dir
+########################################################################################################################
 
 
-def does_file_exist(filepath):
-    return os.path.isfile(filepath)
+
+############################################################
+# Datapoint class
+############################################################
 
 
-def get_file_path(dirs: list[str]):
-    path = get_base_dir()
-    for d in dirs:
-        path = os.path.join(path, d)
-    return path
+@dataclass
+class Datapoint:
+    print("Implement datapoint class here!")
+
+
+############################################################
+# Compilation data containers
+############################################################
 
 
 
@@ -73,8 +71,6 @@ class PlotSEIOptions:
     re_weight_file_pat: Pattern
     error_plot_file_pat: Pattern
 
-
-
 @dataclass
 class PlotSEBOptions:
     plot_weighted_syn_error: bool
@@ -113,6 +109,53 @@ class PlotSEBOptions:
 
 
 
+########################################################################################################################
+
+# Data utilities
+
+########################################################################################################################
+
+
+
+############################################################
+# Base functions
+############################################################
+
+
+
+_cached_base_dir = None
+def get_base_dir(new_base_dir: str=''):
+    global _cached_base_dir
+
+    if new_base_dir != '':
+        _cached_base_dir = new_base_dir
+
+    if _cached_base_dir is not None:
+        return _cached_base_dir
+
+    path = os.path.dirname(os.path.abspath(__file__))
+    _cached_base_dir = os.path.join(path, '../../')
+    return _cached_base_dir
+
+
+def does_file_exist(filepath):
+    return os.path.isfile(filepath)
+
+
+def get_file_path(dirs: list[str]):
+    path = get_base_dir()
+    for d in dirs:
+        path = os.path.join(path, d)
+    return path
+
+
+
+############################################################
+# Data retrieval
+############################################################
+
+
+
 def get_nat_data_and_weights(filepath):
     if not does_file_exist(filepath):
         raise Exception("Nat file does not exist: " + filepath)
@@ -122,7 +165,6 @@ def get_nat_data_and_weights(filepath):
         arrays = tree.arrays(["nat_pt_gen", "nat_pt_weight"], library="np")
 
     return arrays["nat_pt_gen"], arrays["nat_pt_weight"]
-
 
 
 def get_syn_data(filepath):

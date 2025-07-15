@@ -28,10 +28,11 @@ class Point:
     plot_error_bars: bool
     error_color: str
     shift: float
-    dir: str
-    file_pat: Pattern
     num_tests: int
     num_iterations: int
+    num_datapoints: int
+    dir: str
+    file_pat: Pattern
 
 
 
@@ -60,6 +61,7 @@ class PlotSEIOptions:
 
     bins_to_plot: list[int]
     plot_combined: bool
+    shift: float
 
     syn_dir: str
     syn_file_pat: Pattern
@@ -85,6 +87,7 @@ class PlotSEBOptions:
     num_datapoints: int
 
     iterations_to_plot: list[int]
+    shift: float
 
     syn_dir: str
     syn_file_pat: Pattern
@@ -150,7 +153,6 @@ def get_nat_data_and_weights(filepath):
         arrays = tree.arrays(["nat_pt_gen", "nat_pt_weight"], library="np")
 
     return arrays["nat_pt_gen"], arrays["nat_pt_weight"]
-
 
 def get_syn_data(filepath):
     if not does_file_exist(filepath):

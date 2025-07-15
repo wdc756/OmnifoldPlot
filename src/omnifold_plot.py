@@ -56,7 +56,7 @@ if 'Main settings':
     
     This will mainly give insight on weighted vs re-weighted performance, focusing on iteration performance.
     """
-    plot_syn_error_by_iteration = True
+    plot_syn_error_by_iteration = False
 
     # Plots % error of syn data compared to nat data by bin and iteration
     """
@@ -68,7 +68,7 @@ if 'Main settings':
     
     This plot will mainly give insight on weighted vs re-weighted performance, focusing on bin performance
     """
-    plot_syn_error_by_bin = False
+    plot_syn_error_by_bin = True
 
 
 
@@ -101,18 +101,15 @@ if 'SEI options':
     for i in range(int((sei_bins_end - sei_bins_start) / sei_bins_step)):
         sei_bins_to_plot.append(i)
 
+    # This determines if the plots should be averaged by all bins or plotted individually
+    sei_plot_combined = False
+
     # The distance between any two data points per iteration, if there are any
     # This just shifts the iteration points on the x-axis to make the plot readable
     sei_shift_distance = 0.5
 
     # To plot std. deviation error bars
     sei_plot_error_bars = True
-
-    # This bool will re-use the above settings to graph the combined results (average all bins)
-    sei_plot_combined = False
-
-    # Bool to graph standard deviation error bars
-    sei_graph_error_bars = True
 
 
     # Nat data
@@ -138,15 +135,16 @@ if 'SEI options':
         sei_plot_error_bars,
         '#3498db',  # Error bar color
         0,  # Shift amount, leave 0 to be automatically set based on sei_shift_distance
+        sei_num_tests,  # The number of tests, used to average when plotting - make sure it matches in the file pattern below
+        sei_num_iterations,  # The number of iterations - make sure it matches in the file pattern below
+        sei_num_datapoints,  # The number of data points
         'weights',  # Dir to get files from
         Pattern([
             Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
             Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
             Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
             Token('.npy')
-        ]),  # Weights file pattern
-        sei_num_tests,  # The number of tests, used to average when plotting
-        sei_num_iterations  # The number of iterations, sometimes used to change plots
+        ])  # Weights file pattern - where to get the files from
     ))
 
     # Re-Weighted synthetic data
@@ -156,15 +154,16 @@ if 'SEI options':
         sei_plot_error_bars,
         '#e74c3c',
         0,
+        sei_num_tests,
+        sei_num_iterations,
+        sei_num_datapoints,
         're_weights',
         Pattern([
             Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
             Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
             Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
             Token('.npy')
-        ]),
-        sei_num_tests,
-        sei_num_iterations
+        ])
     ))
 
 
@@ -218,7 +217,7 @@ if 'SEI options':
         sei_points,
         sei_bins_start, sei_bins_end, sei_bins_step,
         sei_num_syn_datasets, sei_num_percent_deviations, sei_num_tests, sei_num_iterations, sei_num_datapoints,
-        sei_bins_to_plot, sei_plot_combined,
+        sei_bins_to_plot, sei_plot_combined, sei_shift_distance,
         sei_syn_dir, sei_syn_file_pat,
         sei_plot_dir, sei_plot_file_pat
     )
@@ -255,9 +254,9 @@ if 'SEB options':
 
     # The distance between any 2 datapoints
     # Note the individual values can be set by hand, but it's easier to do this one because it will be automatically applied
-    seb_shift_distance = 2.5
+    seb_shift_distance = 3
 
-    # If std. error bars should be shown
+    # If std error bars should be shown
     seb_plot_error_bars = True
 
 
@@ -284,15 +283,16 @@ if 'SEB options':
         seb_plot_error_bars,
         '#3498db',
         0,
+        seb_num_tests,
+        seb_num_iterations,
+        seb_num_datapoints,
         'weights',
         Pattern([
             Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
             Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
             Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
             Token('.npy')
-        ]),
-        seb_num_tests,
-        seb_num_iterations
+        ])
     ))
 
     # Re-Weighted synthetic data
@@ -302,15 +302,16 @@ if 'SEB options':
         seb_plot_error_bars,
         '#e74c3c',
         0,
+        seb_num_tests,
+        seb_num_iterations,
+        seb_num_datapoints,
         're_weights',
         Pattern([
             Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
             Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
             Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
             Token('.npy')
-        ]),
-        seb_num_tests,
-        seb_num_iterations
+        ])
     ))
 
 
@@ -353,7 +354,7 @@ if 'SEB options':
         seb_points,
         seb_bins_start, seb_bins_end, seb_bins_step,
         seb_num_syn_datasets, seb_num_percent_deviations, seb_num_tests, seb_num_iterations, seb_num_datapoints,
-        seb_iterations_to_plot,
+        seb_iterations_to_plot, seb_shift_distance,
         seb_syn_dir, seb_syn_file_pat,
         seb_plot_dir, seb_plot_file_pat,
     )

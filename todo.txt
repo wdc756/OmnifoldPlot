@@ -1,0 +1,10 @@
+Todo for omnifold plot wdc
+
+Automate shifting points : V
+Re-evaluate vars in SEI/SEB option structs : V
+Re-evaluate Point vars: V
+Add functionality for different Point dimensions
+Add comments to plot.py
+
+Create documentation in readme
+Make programmer's guide

@@ -101,6 +101,11 @@ def _process_weighted_syn(op, point_index, num_bins, bin_idx, weighted_nat, weig
 
     return mean_error, std_error
 
+def _calculate_point_shifts(op):
+    for p in range(len(op.points)):
+        point = op.points[p]
+        point.shift = op.shift * (p - len(op.points) // 2)
+
 
 
 ########################################################################################################################
@@ -215,6 +220,9 @@ def plot_sei(op, data_dir):
     bins = np.linspace(op.bins_start, op.bins_end, num_bins + 1)
 
 
+    _calculate_point_shifts(op)
+
+
     weighted_nat, bin_idx = _get_weighted_nat(op, bins, num_bins, data_dir)
 
 
@@ -322,6 +330,9 @@ def plot_seb(op: data.PlotSEBOptions, data_dir: str):
     # Create bins
     num_bins = int((op.bins_end - op.bins_start) / op.bins_step)
     bins = np.linspace(op.bins_start, op.bins_end, num_bins + 1)
+
+
+    _calculate_point_shifts(op)
 
 
     # Get nat data and binning array

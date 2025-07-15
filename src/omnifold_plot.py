@@ -166,6 +166,8 @@ if 'SEI options':
         ])
     ))
 
+    # Add more points using the above format
+
 
     # Syn data
     ##############################
@@ -216,7 +218,7 @@ if 'SEI options':
         sei_nat_dir, sei_nat_file_pat,
         sei_points,
         sei_bins_start, sei_bins_end, sei_bins_step,
-        sei_num_syn_datasets, sei_num_percent_deviations, sei_num_tests, sei_num_iterations, sei_num_datapoints,
+        sei_num_syn_datasets, sei_num_percent_deviations,
         sei_bins_to_plot, sei_plot_combined, sei_shift_distance,
         sei_syn_dir, sei_syn_file_pat,
         sei_plot_dir, sei_plot_file_pat
@@ -314,6 +316,8 @@ if 'SEB options':
         ])
     ))
 
+    # Add more points using the above format
+
 
     # Syn data
     ##############################
@@ -353,7 +357,7 @@ if 'SEB options':
         seb_nat_data_dir, seb_nat_file_pat,
         seb_points,
         seb_bins_start, seb_bins_end, seb_bins_step,
-        seb_num_syn_datasets, seb_num_percent_deviations, seb_num_tests, seb_num_iterations, seb_num_datapoints,
+        seb_num_syn_datasets, seb_num_percent_deviations,
         seb_iterations_to_plot, seb_shift_distance,
         seb_syn_dir, seb_syn_file_pat,
         seb_plot_dir, seb_plot_file_pat,

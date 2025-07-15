@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import src.util.data as data
+from src.util.data import PlotSEOptions, Point
 
 
 
@@ -16,66 +17,78 @@ import src.util.data as data
 
 
 
-def _get_weighted_nat(op, bins, num_bins, data_dir):
-    # Get nat data and weight
-    nat_data_path = data.get_file_path([data_dir, op.nat_dir, op.nat_file_pat.get_pattern()])
+def _get_bin_idx(unbinned_data: list[float], bins: np.linspace, num_bins: int):
+    # When binning, we create this bin_idx var. It's an array that maps each nat datapoint to the bin it belongs in.
+    #   The first line creates the bin mapping, and the - 1 at the end is to 0-index the map, since np 1-indexes by
+    #   default. The 2nd line catches any datapoints on the end edges of the last bin and maps them inside
+    bin_idx = np.digitize(unbinned_data, bins) - 1
+    bin_idx[bin_idx == num_bins] = num_bins - 1
+
+    return bin_idx
+
+def _get_weighted_nat(op: PlotSEOptions, bins: np.linspace, num_bins: int):
+    # These functions pull data from a root file
+    nat_data_path = data.get_file_path([op.data_dir, op.nat_dir, op.nat_file_pat.get_pattern()])
     nat_data, nat_weight = data.get_nat_data_and_weights(nat_data_path)
 
-    # Check shape
-    if nat_data.shape[0] != op.num_datapoints:
-        raise Exception("Nat data has wrong number of datapoints: " + nat_data.shape[0] + "!=" + op.num_datapoints)
-    if nat_weight.shape[0] != op.num_datapoints:
-        raise Exception("Nat weight has wrong number of datapoints: " + nat_weight.shape[0] + "!=" + op.num_datapoints)
-
-    # Apply nat weights
+    # Weight data then bin to ease processing later, and let us make other observations
     weighted_nat = nat_data * nat_weight
-
-    # Bin nat data
-    bin_idx = np.digitize(nat_data, bins) - 1
-    bin_idx[bin_idx == num_bins] = num_bins - 1
+    bin_idx = _get_bin_idx(weighted_nat, bins, num_bins)
 
     return weighted_nat, bin_idx
 
-def _get_syn_data(op, data_dir):
-    syn_data_path = data.get_file_path([data_dir, op.syn_dir, op.syn_file_pat.get_pattern()])
+def _get_syn_data(point: Point, data_dir: str):
+    # These functions pull data from a root file
+    syn_data_path = data.get_file_path([data_dir, point.syn_dir, point.syn_pat.get_pattern()])
     syn_data = data.get_syn_data(syn_data_path)
 
-    if syn_data.shape[0] != op.num_datapoints:
-        raise Exception("Syn data has wrong number of datapoints: " + syn_data.shape[0] + "!=" + op.num_datapoints)
+    if len(syn_data) != point.num_datapoints:
+        raise ValueError('syn_data does not match ' + point.name + '.num_datapoints')
 
     return syn_data
 
-def _get_weighted_syn(op, point_index, data_dir, syn_data):
-    if point_index >= len(op.points):
-        raise Exception("Point index out of range: " + point_index + " >= " + len(op.points))
-
-    point = op.points[point_index]
+def _get_weighted_syn(op: PlotSEOptions, point: Point):
+    # Since each Point can have a different shape (num iterations, test, and datapoints), we need to get individual syn
+    #   data for each one
+    syn_data = _get_syn_data(point, op.data_dir)
 
     # Container to hold all the weights at once to avg later
-    syn_weight = np.empty((point.num_tests, point.num_iterations, op.num_datapoints), dtype=np.float64)
+    syn_weight = np.empty((point.num_tests, point.num_iterations, point.num_datapoints), dtype=np.float64)
 
-    # Loop over weight files
+
+    # Loop over weight files per-test - because omnifold outputs 1 file per set:percent:iteration:test
     for test in range(point.num_tests):
-        # Load file
-        syn_weight_data_path = data.get_file_path([data_dir, point.dir, point.file_pat.get_pattern()])
+        # These functions load weights from a np file
+        syn_weight_data_path = data.get_file_path([op.data_dir, point.weight_dir, point.weight_pat.get_pattern()])
         syn_weight_data = data.get_syn_weights(syn_weight_data_path)
-        if syn_weight_data.shape != (point.num_iterations, 2, op.num_datapoints):
-            raise Exception("Syn weight data has wrong shape: " + syn_weight_data.shape + "!=" +
-                            str((point.num_iterations, 2, op.num_datapoints)))
 
-        # Loop over iterations to get step 2 weights
+
+        if len(syn_weight_data) != point.num_iterations:
+            raise ValueError('syn_weight does not match ' + point.name + '.num_iterations')
+        if len(syn_weight_data[0]) != 2:
+            raise ValueError('syn_weight does not have two sets of weights')
+        if len(syn_weight_data[0][0]) != point.num_datapoints:
+            raise ValueError('syn_weight does not match ' + point.name + '.num_datapoints')
+
+
+        # Loop over iterations to get step 2 weights - when omnifold runs, it generates two sets of weights. For
+        #   this program, we only need the 2nd set(step)
         for iteration in range(point.num_iterations):
             syn_weight[test][iteration] = syn_weight_data[iteration][1]
 
-        # Increment weight file pat to use the next one
-        if point.file_pat.increment() is False:
+
+        # Increment weight pattern for next file
+        if point.weight_pat.increment() is False:
             break
+
 
     # Average weights over tests
     syn_weight = syn_weight.mean(axis=0)
+    # resulting in the shape [num_iterations, num_datapoints]
 
-    # Reshape syn weights to apply avg to
+    # Reshape syn weights and apply average
     return syn_data[np.newaxis, :] * syn_weight
+    # resulting in the shape [num_iterations, num_datapoints]
 
 def _process_weighted_syn(op, point_index, num_bins, bin_idx, weighted_nat, weighted_syn):
     point = op.points[point_index]
@@ -167,25 +180,34 @@ def _sei_plot_bins(op, num_bins, bin_idx, weighted_nat, datapoints, data_dir):
 
             _sei_plot(op, mean_error, std_error, data_dir)
 
-def _sei_plot_combined(op, num_bins, bin_idx, weighted_nat, datapoints, data_dir):
-    num_points = len(op.points)
-    raw_mean_errors = np.empty((num_points, num_bins, op.num_iterations), dtype=np.float64)
-    raw_std_errors = np.empty((num_points, num_bins, op.num_iterations), dtype=np.float64)
+def _sei_plot_combined(op: PlotSEOptions, num_bins: int, nat_bin_idx, weighted_nat, datapoints, data_dir):
+    # Since we're plotting the average over all bins, we need to make a large array to temporarily hold all the data
+    raw_mean_errors = []
+    raw_std_errors = []
 
 
     for b in range(num_bins):
-        mask_b = (bin_idx == b)
-        if not np.any(mask_b):
-            continue
+        # mask_b = (bin_idx == b)
+        # if not np.any(mask_b):
+        #     continue
+        #
+        # nat_b = weighted_nat[mask_b]
+        # denom = nat_b[np.newaxis, :]
+        #
+        #
+        # for p in range(num_points):
+        #     raw_mean_error, raw_std_error = _process_weighted_syn(op, p, num_bins, bin_idx, weighted_nat, datapoints[p])
+        #     raw_mean_errors[p, :, :] = raw_mean_error
+        #     raw_std_errors[p, :, :] = raw_std_error
 
-        nat_b = weighted_nat[mask_b]
-        denom = nat_b[np.newaxis, :]
+        # Get current nat_data for this mask
+        nat_mask_b = (nat_bin_idx == b)
+        if not np.any(nat_mask_b):
+            continue # When we get a bin with no data, we can just skip it, because the % error would be infinite
+        nat_b = weighted_nat[nat_mask_b]
 
+        for p in range(len(op.points)):
 
-        for p in range(num_points):
-            raw_mean_error, raw_std_error = _process_weighted_syn(op, p, num_bins, bin_idx, weighted_nat, datapoints[p])
-            raw_mean_errors[p, :, :] = raw_mean_error
-            raw_std_errors[p, :, :] = raw_std_error
 
     # Average all bins for each point
     mean_errors = []
@@ -208,46 +230,58 @@ def _sei_plot_combined(op, num_bins, bin_idx, weighted_nat, datapoints, data_dir
 
 
 
-def plot_sei(op, data_dir):
-    # Check execution bools first
+def plot_sei(op: PlotSEOptions):
+    # Since the user can enable SEI plotting in 'Main Settings' in omnifold.py but not include any points to plot,
+    #   we need to check if there is anything to do, so we don't make a bunch of empty plots
     if len(op.points) == 0:
         print("Plot SEI is true, but no datapoints are set to plot")
         return
 
 
-    # Create bins
+    # Since plots can contain any number of points, we want to make sure they don't overlap and block each other
+    #   so we use this to shift them on the x-axis a little
+    _calculate_point_shifts(op)
+
+
+    # When plotting, we use bins to segment our data. This is done so we can better analyze performance
+    # Basically we can see if omnifold is underperforming in a given data range, and use this knowledge to correct it
     num_bins = int((op.bins_end - op.bins_start) / op.bins_step)
     bins = np.linspace(op.bins_start, op.bins_end, num_bins + 1)
 
 
-    _calculate_point_shifts(op)
+    # Since this function plots % error, we need a frame of reference to compare our omnifold-weighted syn data against
+    #   so we need natural (or true) data.
+    # Note that weighted_nat can have a different shape (number of datapoints) than your points do, which is why later
+    #   on we create other bin_idx map arrays for all other datapoints
+    weighted_nat, nat_bin_idx = _get_weighted_nat(op, bins, num_bins)
 
 
-    weighted_nat, bin_idx = _get_weighted_nat(op, bins, num_bins, data_dir)
-
-
-    # Loop over all syn data files
+    # Loop over all syn data files. Set num_syn_datasets and num_percent_deviations to 1 if you only want to compare 1
+    #   syn file or set of syn datapoints
     for syn_d in range(op.num_syn_datasets):
         for syn_p in range(op.num_percent_deviations):
-            # Get syn data
-            syn_data = _get_syn_data(op, data_dir)
 
-            # Get weighted syn data from all points
-            datapoints = []
-            for point_index in range(len(op.points)):
-                datapoints.append(_get_weighted_syn(op, point_index, data_dir, syn_data))
+            # Loop over all points, weighting their syn data and bin_idx maps
+            weighted_syn = []
+            bin_idx = []
+            for point in op.points:
+                weighted_syn_data, syn_bin_idx = _get_weighted_syn(op, point)
+                weighted_syn.append(weighted_syn_data)
+                bin_idx.append(syn_bin_idx)
+            # By the end weighted_syn will be [num_points, num_iterations, num_datapoints], and
+            #   bin_idx will be [num_points, num_datapoints]
 
 
             if op.plot_combined:
-                _sei_plot_combined(op, num_bins, bin_idx, weighted_nat, datapoints, data_dir)
+                _sei_plot_combined(op, num_bins, bin_idx, weighted_nat, weighted_syn, data_dir)
             else:
-                _sei_plot_bins(op, num_bins, bin_idx, weighted_nat, datapoints, data_dir)
+                _sei_plot_bins(op, num_bins, bin_idx, weighted_nat, weighted_syn, data_dir)
 
 
-            # Increment syn_file_pat to use next file on loop continue
-            if op.syn_file_pat.increment() is False:
-                print("Done with syn files")
-                break
+            # Increment all point syn file patterns to keep up with the two loops here
+            for point in op.points:
+                if not point.syn_pat.increment():
+                    raise ValueError(point.name + '.syn_pat failed to increment')
 
 
 
@@ -320,7 +354,7 @@ def _seb_plot_iterations(op, num_bins, bin_idx, bins, weighted_nat, datapoints, 
 
 
 
-def plot_seb(op: data.PlotSEBOptions, data_dir: str):
+def plot_seb(op: PlotSEOptions, data_dir: str):
     # Check execution bools first
     if len(op.points) == 0:
         print("Plot SEB is true, but no datapoints are set to plot")

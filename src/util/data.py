@@ -1,10 +1,10 @@
 # This file helps with data and files
 
 import os
-from startrace import *
 from dataclasses import dataclass
 import uproot
 import numpy as np
+from startrace import *
 
 
 
@@ -16,61 +16,47 @@ import numpy as np
 
 
 
-############################################################
-# Datapoint class
-############################################################
+# @dataclass
+# class File:
+#     dir: str
+#
+#     pat: Pattern
+#
+#     set_index: int
+#     percent_deviation_index: int
+#     iteration_index: int
+#
+#     def
+#
+#     def increment(self):
+#
 
 
 @dataclass
 class Point:
     name: str
+
     color: str
     plot_error_bars: bool
     error_color: str
+
     shift: float
+
     num_tests: int
     num_iterations: int
     num_datapoints: int
-    dir: str
-    file_pat: Pattern
-
-
-
-############################################################
-# Compilation data containers
-############################################################
-
-
-
-@dataclass
-class PlotSEIOptions:
-    nat_dir: str
-    nat_file_pat: Pattern
-
-    points: list[Point]
-
-    bins_start: int
-    bins_end: int
-    bins_step: int
-
-    num_syn_datasets: int
-    num_percent_deviations: int
-    num_tests: int
-    num_iterations: int
-    num_datapoints: int
-
-    bins_to_plot: list[int]
-    plot_combined: bool
-    shift: float
 
     syn_dir: str
-    syn_file_pat: Pattern
+    syn_pat: Pattern
 
-    plot_dir: str
-    plot_file_pat: Pattern
+    weight_dir: str
+    weight_pat: Pattern
+
+
 
 @dataclass
-class PlotSEBOptions:
+class PlotSEOptions:
+    data_dir: str
     nat_dir: str
     nat_file_pat: Pattern
 
@@ -82,11 +68,9 @@ class PlotSEBOptions:
 
     num_syn_datasets: int
     num_percent_deviations: int
-    num_tests: int
-    num_iterations: int
-    num_datapoints: int
 
-    iterations_to_plot: list[int]
+    items_to_plot: list[int]
+    plot_combined: bool
     shift: float
 
     syn_dir: str

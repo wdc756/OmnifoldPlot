@@ -68,7 +68,7 @@ if 'Main settings':
     
     This plot will mainly give insight on weighted vs re-weighted performance, focusing on bin performance
     """
-    plot_syn_error_by_bin = True
+    plot_syn_error_by_bin = False
 
 
 
@@ -81,29 +81,7 @@ if 'SEI options':
     
     # SEI Main control vars
     ##############################
-    
-    
-    # Bool to graph unweighted synthetic data
-    sei_plot_unweighted = False
-    sei_color = '#2ecc71'
-    
-    # Bool to graph omnifold-weighted syn data
-    sei_plot_weighted = True
-    sei_weighted_color = '#3498db'
-    
-    # Bool to plot pre-weighted omnifold-weighted syn data
-    sei_plot_re_weighted = True
-    sei_re_weighted_color = '#e74c3c'
-    
-    # The distance between any two data points per iteration, if there are any
-    # This just shifts the iteration points on the x-axis to make the plot readable
-    sei_shift_distance = 0.5
-    
-    # This bool will re-use the above settings to graph the combined results (average all bins)
-    sei_plot_combined = True
-    
-    # Bool to graph standard deviation error bars
-    sei_graph_error_bars = True
+
     
     # Binning vars
     sei_bins_start = 0
@@ -116,52 +94,112 @@ if 'SEI options':
     sei_num_tests = 10
     sei_num_iterations = 5
     sei_num_datapoints = 150000
-    
-    
-    # SEI File vars
+
+    # Bins to plot - note each value is the index, not the actual bin values
+    # To automatically plot all, uncomment the for loop below
+    sei_bins_to_plot = []
+    for i in range(int((sei_bins_end - sei_bins_start) / sei_bins_step)):
+        sei_bins_to_plot.append(i)
+
+    # The distance between any two data points per iteration, if there are any
+    # This just shifts the iteration points on the x-axis to make the plot readable
+    sei_shift_distance = 0.5
+
+    # To plot std. deviation error bars
+    sei_plot_error_bars = True
+
+    # This bool will re-use the above settings to graph the combined results (average all bins)
+    sei_plot_combined = False
+
+    # Bool to graph standard deviation error bars
+    sei_graph_error_bars = True
+
+
+    # Nat data
     ##############################
-    
-    
-    sei_nat_data_dir = 'mock'
-    sei_syn_data_dir = 'mock'
-    sei_weight_dir = 'weights'
-    sei_re_weight_dir = 're_weights'
-    sei_plot_dir = 'plots/iterations'
-    
+
+
+    sei_nat_dir = 'mock'
     sei_nat_file_pat = Pattern([
         Token('mockdata.nat.Logweighted2.N150000.root'),
     ])
+
+
+    # Datapoints
+    ##############################
+
+
+    sei_points = []
+
+    # Weighted synthetic data
+    sei_points.append(data.Point(
+        'weighted syn',  # Title, for the legend
+        '#3498db',  # Point color
+        sei_plot_error_bars,
+        '#3498db',  # Error bar color
+        0,  # Shift amount, leave 0 to be automatically set based on sei_shift_distance
+        'weights',  # Dir to get files from
+        Pattern([
+            Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
+            Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
+            Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
+            Token('.npy')
+        ]),  # Weights file pattern
+        sei_num_tests,  # The number of tests, used to average when plotting
+        sei_num_iterations  # The number of iterations, sometimes used to change plots
+    ))
+
+    # Re-Weighted synthetic data
+    sei_points.append(data.Point(
+        're-weighted syn',
+        '#e74c3c',
+        sei_plot_error_bars,
+        '#e74c3c',
+        0,
+        're_weights',
+        Pattern([
+            Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
+            Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
+            Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
+            Token('.npy')
+        ]),
+        sei_num_tests,
+        sei_num_iterations
+    ))
+
+
+    # Syn data
+    ##############################
+
+
+    sei_syn_dir = 'mock'
     sei_syn_file_pat = Pattern([
         Token('mockdata.syn', 1, Iter(1, sei_num_syn_datasets, 1)),
         Token('.', 1, Iter(1, sei_num_percent_deviations, 1)),
         Token('Percent.Logweighted2.N150000.root')
     ])
-    sei_weight_file_pat = Pattern([
-        Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
-        Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
-        Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
-        Token('.npy')
-    ])
-    sei_re_weight_file_pat = Pattern([
-        Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
-        Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
-        Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
-        Token('.npy')
-    ])
-    
-    # Automate bin plot names
-    bins_str = []
-    for i in range(sei_bins_start, sei_bins_end, sei_bins_step):
-        bins_str.append(str(i) + '-' + str(i + sei_bins_step))
+
+
+    # Plot file pattern
+    ##############################
+
+
+    sei_plot_dir = 'plots/bins'
+
+    sei_plot_file_bins_str = []
+    sei_bins = []
+    for i in range(sei_bins_start, sei_bins_end + sei_bins_step, sei_bins_step):
+        sei_bins.append(i)
+    for i in range(len(sei_bins_to_plot)):
+        sei_plot_file_bins_str.append(str(sei_bins[sei_bins_to_plot[i]]) + '-' + str(sei_bins[sei_bins_to_plot[i] + 1]))
+
     sei_plot_file_pat = Pattern([
         Token('syn', 1, Iter(1, sei_num_syn_datasets, 1)),
         Token('.', 1, Iter(1, sei_num_percent_deviations, 1)),
         Token('Percent.'),
-        Token(bins_str),
+        Token(sei_plot_file_bins_str),
         Token('GeV.png')
     ])
-
-    # Automate alternate file pat name when sei_plot_combined == True
     if sei_plot_combined:
         sei_plot_file_pat = Pattern([
             Token('syn', 1, Iter(1, sei_num_syn_datasets, 1)),
@@ -176,18 +214,14 @@ if 'SEI options':
     
     # In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
     plot_sei_options = data.PlotSEIOptions(
-        sei_plot_unweighted, sei_color,
-        sei_plot_weighted, sei_weighted_color,
-        sei_plot_re_weighted, sei_re_weighted_color,
-        sei_shift_distance,
-        sei_plot_combined,
-        sei_graph_error_bars,
+        sei_nat_dir, sei_nat_file_pat,
+        sei_points,
         sei_bins_start, sei_bins_end, sei_bins_step,
         sei_num_syn_datasets, sei_num_percent_deviations, sei_num_tests, sei_num_iterations, sei_num_datapoints,
-        sei_nat_data_dir, sei_syn_data_dir, sei_weight_dir, sei_re_weight_dir, sei_plot_dir,
-        sei_nat_file_pat, sei_syn_file_pat, sei_weight_file_pat, sei_re_weight_file_pat,
-        sei_plot_file_pat,
-    ) 
+        sei_bins_to_plot, sei_plot_combined,
+        sei_syn_dir, sei_syn_file_pat,
+        sei_plot_dir, sei_plot_file_pat
+    )
 
 
 
@@ -198,24 +232,9 @@ if 'SEI options':
 
 if 'SEB options':
 
-    # SEB Main control vars
+    # Shared settings
     ##############################
 
-
-    # Bool to graph omnifold-weighted syn data
-    seb_plot_weighted = True
-    seb_weighted_color = '#3498db'
-
-    # Bool to plot pre-weighted omnifold-weighted syn data
-    seb_plot_re_weighted = True
-    seb_re_weighted_color = '#e74c3c'
-
-    # The distance between any two data points per iteration, if there are any
-    # This just shifts the iteration points on the x-axis to make the plot readable
-    seb_shift_distance = 5
-
-    # Bool to graph standard deviation error bars
-    seb_graph_error_bars = True
 
     # Binning vars
     seb_bins_start = 0
@@ -234,47 +253,92 @@ if 'SEB options':
     # for i in range(1, seb_num_iterations + 1):
     #     seb_iterations_to_plot.append(i)
 
+    # The distance between any 2 datapoints
+    # Note the individual values can be set by hand, but it's easier to do this one because it will be automatically applied
+    seb_shift_distance = 2.5
 
-    # SEB File vars
+    # If std. error bars should be shown
+    seb_plot_error_bars = True
+
+
+    # Nat data
     ##############################
 
 
     seb_nat_data_dir = 'mock'
-    seb_syn_data_dir = 'mock'
-    seb_weight_dir = 'weights'
-    seb_re_weight_dir = 're_weights'
-    seb_plot_dir = 'plots/bins'
-
     seb_nat_file_pat = Pattern([
         Token('mockdata.nat.Logweighted2.N150000.root'),
     ])
+
+
+    # Datapoints
+    ##############################
+
+
+    seb_points = []
+
+    # Weighted synthetic data
+    seb_points.append(data.Point(
+        'weighted syn',
+        '#3498db',
+        seb_plot_error_bars,
+        '#3498db',
+        0,
+        'weights',
+        Pattern([
+            Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+            Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
+            Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
+            Token('.npy')
+        ]),
+        seb_num_tests,
+        seb_num_iterations
+    ))
+
+    # Re-Weighted synthetic data
+    seb_points.append(data.Point(
+        're-weighted syn',
+        '#e74c3c',
+        seb_plot_error_bars,
+        '#e74c3c',
+        0,
+        're_weights',
+        Pattern([
+            Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+            Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
+            Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
+            Token('.npy')
+        ]),
+        seb_num_tests,
+        seb_num_iterations
+    ))
+
+
+    # Syn data
+    ##############################
+
+
+    seb_syn_dir = 'mock'
     seb_syn_file_pat = Pattern([
         Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
         Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
         Token('Percent.Logweighted2.N150000.root')
     ])
-    seb_weight_file_pat = Pattern([
-        Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
-        Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
-        Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
-        Token('.npy')
-    ])
-    seb_re_weight_file_pat = Pattern([
-        Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
-        Token('_', 1, Iter(1, seb_num_percent_deviations, 1)),
-        Token('Percent_Test', 1, Iter(1, seb_num_tests, 1)),
-        Token('.npy')
-    ])
 
-    # Automate iteration names
-    iterations_str = []
+
+    # Plot file pattern
+    ##############################
+
+
+    seb_plot_dir = 'plots/bins'
+    seb_plot_file_iterations_str = []
     for i in seb_iterations_to_plot:
-        iterations_str.append(str(i))
+        seb_plot_file_iterations_str.append(str(i))
     seb_plot_file_pat = Pattern([
         Token('syn', 1, Iter(1, seb_num_syn_datasets, 1)),
         Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
         Token('Percent.Iteration'),
-        Token(iterations_str),
+        Token(seb_plot_file_iterations_str),
         Token('.png')
     ])
 
@@ -285,16 +349,13 @@ if 'SEB options':
 
     # In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
     plot_seb_options = data.PlotSEBOptions(
-        seb_plot_weighted, seb_weighted_color,
-        seb_plot_re_weighted, seb_re_weighted_color,
-        seb_shift_distance,
-        seb_graph_error_bars,
+        seb_nat_data_dir, seb_nat_file_pat,
+        seb_points,
         seb_bins_start, seb_bins_end, seb_bins_step,
         seb_num_syn_datasets, seb_num_percent_deviations, seb_num_tests, seb_num_iterations, seb_num_datapoints,
         seb_iterations_to_plot,
-        seb_nat_data_dir, seb_syn_data_dir, seb_weight_dir, seb_re_weight_dir, seb_plot_dir,
-        seb_nat_file_pat, seb_syn_file_pat, seb_weight_file_pat, seb_re_weight_file_pat,
-        seb_plot_file_pat,
+        seb_syn_dir, seb_syn_file_pat,
+        seb_plot_dir, seb_plot_file_pat,
     )
 
 

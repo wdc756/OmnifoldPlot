@@ -22,8 +22,17 @@ import numpy as np
 
 
 @dataclass
-class Datapoint:
-    print("Implement datapoint class here!")
+class Point:
+    name: str
+    color: str
+    plot_error_bars: bool
+    error_color: str
+    shift: float
+    dir: str
+    file_pat: Pattern
+    num_tests: int
+    num_iterations: int
+
 
 
 ############################################################
@@ -34,20 +43,10 @@ class Datapoint:
 
 @dataclass
 class PlotSEIOptions:
-    plot_syn_error: bool
-    syn_color: str
+    nat_dir: str
+    nat_file_pat: Pattern
 
-    plot_weighted_syn_error: bool
-    weighted_color: str
-
-    plot_re_weighted_syn_error: bool
-    re_weighted_color: str
-
-    shift_distance: float
-
-    plot_combined: bool
-
-    plot_error_bars: bool
+    points: list[Point]
 
     bins_start: int
     bins_end: int
@@ -59,29 +58,21 @@ class PlotSEIOptions:
     num_iterations: int
     num_datapoints: int
 
-    nat_data_dir: str
-    syn_data_dir: str
-    weight_dir: str
-    re_weight_dir: str
-    plot_dir: str
+    bins_to_plot: list[int]
+    plot_combined: bool
 
-    nat_file_pat: Pattern
+    syn_dir: str
     syn_file_pat: Pattern
-    weight_file_pat: Pattern
-    re_weight_file_pat: Pattern
-    error_plot_file_pat: Pattern
+
+    plot_dir: str
+    plot_file_pat: Pattern
 
 @dataclass
 class PlotSEBOptions:
-    plot_weighted_syn_error: bool
-    weighted_color: str
+    nat_dir: str
+    nat_file_pat: Pattern
 
-    plot_re_weighted_syn_error: bool
-    re_weighted_color: str
-
-    shift_distance: float
-
-    plot_error_bars: bool
+    points: list[Point]
 
     bins_start: int
     bins_end: int
@@ -95,17 +86,11 @@ class PlotSEBOptions:
 
     iterations_to_plot: list[int]
 
-    nat_data_dir: str
-    syn_data_dir: str
-    weight_dir: str
-    re_weight_dir: str
-    plot_dir: str
-
-    nat_file_pat: Pattern
+    syn_dir: str
     syn_file_pat: Pattern
-    weight_file_pat: Pattern
-    re_weight_file_pat: Pattern
-    error_plot_file_pat: Pattern
+
+    plot_dir: str
+    plot_file_pat: Pattern
 
 
 

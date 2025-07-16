@@ -35,11 +35,9 @@ from startrace import *
 @dataclass
 class Point:
     name: str
-
     color: str
     plot_error_bars: bool
     error_color: str
-
     shift: float
 
     num_tests: int
@@ -57,6 +55,7 @@ class Point:
 @dataclass
 class PlotSEOptions:
     data_dir: str
+
     nat_dir: str
     nat_file_pat: Pattern
 
@@ -72,9 +71,6 @@ class PlotSEOptions:
     items_to_plot: list[int]
     plot_combined: bool
     shift: float
-
-    syn_dir: str
-    syn_file_pat: Pattern
 
     plot_dir: str
     plot_file_pat: Pattern

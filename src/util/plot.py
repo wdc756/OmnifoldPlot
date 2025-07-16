@@ -17,7 +17,7 @@ from src.util.data import PlotSEOptions, Point
 
 
 
-def _get_bin_idx(unbinned_data: list[float], bins: np.linspace, num_bins: int):
+def _get_bin_idx(unbinned_data: np.ndarray, bins: np.linspace, num_bins: int):
     # When binning, we create this bin_idx var. It's an array that maps each nat datapoint to the bin it belongs in.
     #   The first line creates the bin mapping, and the - 1 at the end is to 0-index the map, since np 1-indexes by
     #   default. The 2nd line catches any datapoints on the end edges of the last bin and maps them inside
@@ -90,34 +90,73 @@ def _get_weighted_syn(op: PlotSEOptions, point: Point):
     return syn_data[np.newaxis, :] * syn_weight
     # resulting in the shape [num_iterations, num_datapoints]
 
-def _process_weighted_syn(op, point_index, num_bins, bin_idx, weighted_nat, weighted_syn):
+def _process_weighted_syn(op: PlotSEOptions, point_index: int, bins: np.linspace, num_bins: int, nat_bin_idx: np.ndarray,
+                          weighted_nat: np.ndarray, weighted_syn: np.ndarray):
+    # When making this function, it was easier to just pass the index of the current point, since the caller didn't
+    #   need a point ref, but this function does so we need to get it here
     point = op.points[point_index]
 
+
+    # This function will return these two arrays at the end
     mean_error = np.empty((num_bins, point.num_iterations), dtype=np.float64)
     std_error = np.empty((num_bins, point.num_iterations), dtype=np.float64)
 
+    # Loop over bins, adding values to mean_error and std_error for each bin
     for b in range(num_bins):
-        mask_b = (bin_idx == b)
-        if not mask_b.any():
+
+        # Get nat data mask
+        nat_mask_b = (nat_bin_idx == b)
+        # We need to skip empty bins because if we don't we get infinite % error
+        if not nat_mask_b.any():
             mean_error[b, :] = np.nan
             std_error[b, :] = np.nan
             continue
 
-        nat_b = weighted_nat[mask_b]
-        weighted_syn_B = weighted_syn[:, mask_b]
-        num = weighted_syn_B - nat_b[np.newaxis, :]
-        denom = nat_b[np.newaxis, :]
-        err_b = np.where(denom != 0, num / denom * 100.0, np.nan)
+        # Use nat mask to get nat values for this bin
+        nat_b = weighted_nat[nat_mask_b]
 
-        mean_error[b, :] = np.nanmean(err_b, axis=1)
-        std_error[b, :] = np.nanstd(err_b, axis=1)
+        # Since syn and nat have different sizes, we need to compare mean values
+        mean_nat = np.nanmean(nat_b)
+
+
+        # Get syn bin map and mask to bin syn data to exclude data from other bins
+        syn_bin_idx = _get_bin_idx(weighted_syn, bins, num_bins)
+        syn_mask_b = (syn_bin_idx == b)
+
+        # We need to check if syn has any events in bin b, because if not we need to manually set the mean to 0.
+        # The reason we don't just continue like earlier is because we actually want this error calculation
+        mean_syn = np.zeros(point.num_iterations)
+        for i in range(point.num_iterations):
+            syn_values = weighted_syn[i, :]
+            mask_i = syn_mask_b[i, :]
+            values_in_bin = syn_values[mask_i]
+
+            if values_in_bin.size > 0:
+                mean_syn[i] = np.nanmean(values_in_bin)
+            else:
+                mean_syn[i] = 0  # or np.nan, depending on how you want to treat missing iterations
+        # mean_syn now has shape [num_iterations]
+
+        # Calculate % error & std. deviation
+        num = mean_syn - mean_nat
+        denom = mean_nat
+        err_per_iter = np.where(denom != 0, num / denom * 100.0, np.nan)
+        # Now err_per_iter is shape [i], where each element is the % error for that iteration in bin b
+
+        # Since err_per_iter is already the right shape, just add it onto mean_error, but we need to calculate std_error
+        #   for this iteration
+        mean_error[b, :] = err_per_iter
+        std_error[b] = np.nanstd(err_per_iter)
 
     return mean_error, std_error
 
-def _calculate_point_shifts(op):
+def _calculate_point_shifts(op: PlotSEOptions):
     for p in range(len(op.points)):
         point = op.points[p]
-        point.shift = op.shift * (p - len(op.points) // 2)
+
+        # Only shift if the user hasn't set it manually
+        if point.shift == 0:
+            point.shift = op.shift * (p - len(op.points) // 2)
 
 
 
@@ -135,7 +174,7 @@ def _calculate_point_shifts(op):
 
 
 
-def _sei_plot_weighted_syn(op, point_index, mean_error, std_error):
+def _sei_plot_weighted_syn(op: PlotSEOptions, point_index: int, mean_error: np.ndarray, std_error: np.ndarray):
     point = op.points[point_index]
 
     weighted_iters = np.arange(mean_error.size)
@@ -148,7 +187,8 @@ def _sei_plot_weighted_syn(op, point_index, mean_error, std_error):
                  ecolor=point.error_color,
                  color=point.color)
 
-def _sei_plot(op, mean_errors, std_errors, data_dir):
+def _sei_plot(op: PlotSEOptions, mean_errors: np.ndarray, std_errors: np.ndarray):
+    # Plot each point
     for p in range(len(op.points)):
         _sei_plot_weighted_syn(op, p, mean_errors[p], std_errors[p])
 
@@ -159,68 +199,50 @@ def _sei_plot(op, mean_errors, std_errors, data_dir):
     plt.grid(True)
     plt.tight_layout()
     plt.legend()
-    plt.savefig(data.get_file_path([data_dir, op.plot_dir, op.plot_file_pat.get_pattern()]))
+
+    plt.savefig(data.get_file_path([op.data_dir, op.plot_dir, op.plot_file_pat.get_pattern()]))
     plt.show()
 
     op.plot_file_pat.increment()
 
-def _sei_plot_bins(op, num_bins, bin_idx, weighted_nat, datapoints, data_dir):
+def _sei_plot_bins(op: PlotSEOptions, bins: np.linspace, num_bins: int, nat_bin_idx: np.ndarray,
+                   weighted_nat: np.ndarray, weighted_syn_all: np.ndarray):
+    # Get mean & std error for all bins and points, then plot
     for b in range(num_bins):
-        mask_b = (bin_idx == b)
-        if not np.any(mask_b):
-            continue
-
-
-        nat_b = weighted_nat[mask_b]
-        denom = nat_b[np.newaxis, :]
-
-
         for p in range(len(op.points)):
-            mean_error, std_error = _process_weighted_syn(op, p, num_bins, bin_idx, weighted_nat, datapoints[p])
+            mean_error, std_error = _process_weighted_syn(op, p, bins, num_bins, nat_bin_idx, weighted_nat,
+                                                          weighted_syn_all[p])
 
-            _sei_plot(op, mean_error, std_error, data_dir)
+            _sei_plot(op, mean_error, std_error)
 
-def _sei_plot_combined(op: PlotSEOptions, num_bins: int, nat_bin_idx, weighted_nat, datapoints, data_dir):
+def _sei_plot_combined(op: PlotSEOptions, bins: np.linspace, num_bins: int, nat_bin_idx: np.ndarray,
+                       weighted_nat: np.ndarray, weighted_syn_all: np.ndarray):
     # Since we're plotting the average over all bins, we need to make a large array to temporarily hold all the data
-    raw_mean_errors = []
-    raw_std_errors = []
+    mean_error_all = []
+    std_error_all = []
 
-
+    # Get mean & std error for all bins and points
     for b in range(num_bins):
-        # mask_b = (bin_idx == b)
-        # if not np.any(mask_b):
-        #     continue
-        #
-        # nat_b = weighted_nat[mask_b]
-        # denom = nat_b[np.newaxis, :]
-        #
-        #
-        # for p in range(num_points):
-        #     raw_mean_error, raw_std_error = _process_weighted_syn(op, p, num_bins, bin_idx, weighted_nat, datapoints[p])
-        #     raw_mean_errors[p, :, :] = raw_mean_error
-        #     raw_std_errors[p, :, :] = raw_std_error
-
-        # Get current nat_data for this mask
-        nat_mask_b = (nat_bin_idx == b)
-        if not np.any(nat_mask_b):
-            continue # When we get a bin with no data, we can just skip it, because the % error would be infinite
-        nat_b = weighted_nat[nat_mask_b]
-
         for p in range(len(op.points)):
+            mean_error, std_error = _process_weighted_syn(op, p, bins, num_bins, nat_bin_idx, weighted_nat,
+                                                          weighted_syn_all[p])
+            mean_error_all.append(mean_error)
+            std_error_all.append(std_error)
+    # This loop results in mean_error_all/std_error_all with shapes [num_points, num_bins, num_iterations]
 
 
     # Average all bins for each point
     mean_errors = []
     std_errors = []
-    for p in range(num_points):
-        mean_error = np.nanmean(raw_mean_errors[p], axis=0)
-        std_error = np.nanstd(raw_mean_errors[p], axis=0)
+    for p in range(len(op.points)):
+        mean_error = np.nanmean(mean_error_all[p], axis=0)
+        std_error = np.nanmean(std_error_all[p], axis=0)
 
         mean_errors.append(mean_error)
         std_errors.append(std_error)
 
 
-    _sei_plot(op, mean_errors, std_errors, data_dir)
+    _sei_plot(op, mean_errors, std_errors)
 
 
 
@@ -262,26 +284,26 @@ def plot_sei(op: PlotSEOptions):
         for syn_p in range(op.num_percent_deviations):
 
             # Loop over all points, weighting their syn data and bin_idx maps
-            weighted_syn = []
-            bin_idx = []
+            weighted_syn_all = []
             for point in op.points:
-                weighted_syn_data, syn_bin_idx = _get_weighted_syn(op, point)
-                weighted_syn.append(weighted_syn_data)
-                bin_idx.append(syn_bin_idx)
-            # By the end weighted_syn will be [num_points, num_iterations, num_datapoints], and
-            #   bin_idx will be [num_points, num_datapoints]
+                weighted_syn_data = _get_weighted_syn(op, point)
+                weighted_syn_all.append(weighted_syn_data)
+            # By the end weighted_syn will be [num_points, num_iterations, num_datapoints]
 
 
             if op.plot_combined:
-                _sei_plot_combined(op, num_bins, bin_idx, weighted_nat, weighted_syn, data_dir)
+                _sei_plot_combined(op, bins, num_bins, nat_bin_idx, weighted_nat, weighted_syn_all)
             else:
-                _sei_plot_bins(op, num_bins, bin_idx, weighted_nat, weighted_syn, data_dir)
+                _sei_plot_bins(op, bins, num_bins, nat_bin_idx, weighted_nat, weighted_syn_all)
 
 
             # Increment all point syn file patterns to keep up with the two loops here
             for point in op.points:
                 if not point.syn_pat.increment():
-                    raise ValueError(point.name + '.syn_pat failed to increment')
+                    # We only want to trigger this error before we're done, so if the two iterator values are done, we
+                    #   can ignore the error
+                    if syn_d < op.num_syn_datasets - 1 or syn_p < op.num_percent_deviations - 1:
+                        raise ValueError(point.name + '.syn_pat failed to increment')
 
 
 
@@ -322,29 +344,36 @@ def _seb_plot_extras(op):
     plt.xticks(np.arange(op.bins_start, op.bins_end + 1, op.bins_step))
     plt.legend()
 
-def _seb_plot_iterations(op, num_bins, bin_idx, bins, weighted_nat, datapoints, data_dir):
+def _seb_plot_iterations(op: PlotSEOptions, bins: np.linspace, num_bins: int, nat_bin_idx: np.ndarray,
+                         weighted_nat: np.ndarray, weighted_syn: np.ndarray):
     mean_errors = []
     std_errors = []
-    for point_index in range(len(op.points)):
-        weighted_mean_error, weighted_std_error = _process_weighted_syn(op, point_index, num_bins, bin_idx, weighted_nat,
-                                                                        datapoints[point_index])
+    for p in range(len(op.points)):
+        weighted_mean_error, weighted_std_error = _process_weighted_syn(op, p, bins, num_bins, nat_bin_idx,
+                                                                        weighted_nat, weighted_syn[p])
         mean_errors.append(weighted_mean_error)
         std_errors.append(weighted_std_error)
 
 
+    # Since we're plotting iterations but with bins on the x-axis, we need a way to map iterations to the x-axis, so we
+    #   create this var to help place the iteration points in the center of each bin horizontally
     bin_centers = 0.5 * (bins[:-1] + bins[1:])
 
-    for iteration in op.iterations_to_plot:
-        iteration = iteration - 1
+    # This plot doesn't really make sense if the points have different iteration counts, so this loop only goes over
+    #   the ones set in the main options. This means if a Point has more iterations, they'll be truncated, and if it
+    #   has less it might cause errors, or just missing/skewed points
+    for iteration in op.items_to_plot:
+        i = iteration - 1
 
         for point_index in range(len(op.points)):
-            _seb_plot_weighted_syn(op, point_index, bin_centers, mean_errors[point_index], std_errors[point_index], iteration)
+            _seb_plot_weighted_syn(op, point_index, bin_centers, mean_errors[point_index], std_errors[point_index], i)
 
         _seb_plot_extras(op)
-        plt.savefig(data.get_file_path([data_dir, op.plot_dir, op.plot_file_pat.get_pattern()]))
+        plt.savefig(data.get_file_path([op.data_dir, op.plot_dir, op.plot_file_pat.get_pattern()]))
         plt.show()
 
         op.plot_file_pat.increment()
+
 
 
 
@@ -354,43 +383,40 @@ def _seb_plot_iterations(op, num_bins, bin_idx, bins, weighted_nat, datapoints, 
 
 
 
-def plot_seb(op: PlotSEOptions, data_dir: str):
-    # Check execution bools first
+def plot_seb(op: PlotSEOptions):
+    # As a general note, if you're looking for comments on how the code for SEB works, just look at the SEI functions.
+    #   Since the two functions are so similar, I decided to just not put any repetitive comments here, though there
+    #   are a few unique to SEB
+
+
     if len(op.points) == 0:
         print("Plot SEB is true, but no datapoints are set to plot")
         return
 
 
-    # Create bins
+    _calculate_point_shifts(op)
+
+
     num_bins = int((op.bins_end - op.bins_start) / op.bins_step)
     bins = np.linspace(op.bins_start, op.bins_end, num_bins + 1)
 
 
-    _calculate_point_shifts(op)
+    weighted_nat, nat_bin_idx = _get_weighted_nat(op, bins, num_bins)
 
 
-    # Get nat data and binning array
-    weighted_nat, bin_idx = _get_weighted_nat(op, bins, num_bins, data_dir)
-
-
-    # Loop over all syn data files
     for syn_d in range(op.num_syn_datasets):
         for syn_p in range(op.num_percent_deviations):
-            # Get syn data
-            syn_data = _get_syn_data(op, data_dir)
+
+            weighted_syn_all = []
+            for point in op.points:
+                weighted_syn_data = _get_weighted_syn(op, point)
+                weighted_syn_all.append(weighted_syn_data)
 
 
-            # Get weighted syn data from all points
-            datapoints = []
-            for point_index in range(len(op.points)):
-                datapoints.append(_get_weighted_syn(op, point_index, data_dir, syn_data))
+            _seb_plot_iterations(op, bins, num_bins, nat_bin_idx, weighted_nat, weighted_syn_all)
 
 
-            # Plot all iterations for this syn file
-            _seb_plot_iterations(op, num_bins, bin_idx, bins, weighted_nat, datapoints, data_dir)
-
-
-            # Increment syn_file_pat to use next file on loop continue
-            if op.syn_file_pat.increment() is False:
-                print("Done with syn files")
-                break
+            for point in op.points:
+                if not point.syn_pat.increment():
+                    if syn_d < op.num_syn_datasets - 1 or syn_p < op.num_percent_deviations - 1:
+                        raise ValueError(point.name + '.syn_pat failed to increment')

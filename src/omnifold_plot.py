@@ -102,11 +102,11 @@ if 'SEI options':
         sei_bins_to_plot.append(i)
 
     # This determines if the plots should be averaged by all bins or plotted individually
-    sei_plot_combined = False
+    sei_plot_combined = True
 
     # The distance between any two data points per iteration, if there are any
     # This just shifts the iteration points on the x-axis to make the plot readable
-    sei_shift_distance = 0.5
+    sei_shift_distance = 0.25
 
     # To plot std. deviation error bars
     sei_plot_error_bars = True
@@ -138,13 +138,19 @@ if 'SEI options':
         sei_num_tests,  # The number of tests, used to average when plotting - make sure it matches in the file pattern below
         sei_num_iterations,  # The number of iterations - make sure it matches in the file pattern below
         sei_num_datapoints,  # The number of data points
-        'weights',  # Dir to get files from
+        'mock', # dir to get syn data from
+        Pattern([
+            Token('mockdata.syn', 1, Iter(1, sei_num_syn_datasets, 1)),
+            Token('.', 1, Iter(1, sei_num_percent_deviations, 1)),
+            Token('Percent.Logweighted2.N150000.root')
+        ]), # Syn file pattern
+        'weights',  # Dir to get weights from
         Pattern([
             Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
             Token('_', 1, Iter(1, sei_num_percent_deviations, 1)),
             Token('Percent_Test', 1, Iter(1, sei_num_tests, 1)),
             Token('.npy')
-        ])  # Weights file pattern - where to get the files from
+        ]) # Weights file pattern
     ))
 
     # Re-Weighted synthetic data
@@ -157,6 +163,12 @@ if 'SEI options':
         sei_num_tests,
         sei_num_iterations,
         sei_num_datapoints,
+        'mock',
+        Pattern([
+            Token('mockdata.syn', 1, Iter(1, sei_num_syn_datasets, 1)),
+            Token('.', 1, Iter(1, sei_num_percent_deviations, 1)),
+            Token('Percent.Logweighted2.N150000.root')
+        ]),
         're_weights',
         Pattern([
             Token('Syn', 1, Iter(1, sei_num_syn_datasets, 1)),
@@ -167,18 +179,6 @@ if 'SEI options':
     ))
 
     # Add more points using the above format
-
-
-    # Syn data
-    ##############################
-
-
-    sei_syn_dir = 'mock'
-    sei_syn_file_pat = Pattern([
-        Token('mockdata.syn', 1, Iter(1, sei_num_syn_datasets, 1)),
-        Token('.', 1, Iter(1, sei_num_percent_deviations, 1)),
-        Token('Percent.Logweighted2.N150000.root')
-    ])
 
 
     # Plot file pattern
@@ -214,13 +214,13 @@ if 'SEI options':
     
     
     # In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
-    plot_sei_options = data.PlotSEIOptions(
+    plot_sei_options = data.PlotSEOptions(
+        data_dir,
         sei_nat_dir, sei_nat_file_pat,
         sei_points,
         sei_bins_start, sei_bins_end, sei_bins_step,
         sei_num_syn_datasets, sei_num_percent_deviations,
         sei_bins_to_plot, sei_plot_combined, sei_shift_distance,
-        sei_syn_dir, sei_syn_file_pat,
         sei_plot_dir, sei_plot_file_pat
     )
 
@@ -276,6 +276,8 @@ if 'SEB options':
     ##############################
 
 
+    # Important Note! Never set different Point.num_iterations for any two Points. It can cause data loss and errors
+
     seb_points = []
 
     # Weighted synthetic data
@@ -288,6 +290,12 @@ if 'SEB options':
         seb_num_tests,
         seb_num_iterations,
         seb_num_datapoints,
+        'mock',
+        Pattern([
+            Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+            Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
+            Token('Percent.Logweighted2.N150000.root')
+        ]),
         'weights',
         Pattern([
             Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
@@ -307,6 +315,12 @@ if 'SEB options':
         seb_num_tests,
         seb_num_iterations,
         seb_num_datapoints,
+        'mock',
+        Pattern([
+            Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
+            Token('.', 1, Iter(1, seb_num_percent_deviations, 1)),
+            Token('Percent.Logweighted2.N150000.root')
+        ]),
         're_weights',
         Pattern([
             Token('Syn', 1, Iter(1, seb_num_syn_datasets, 1)),
@@ -353,13 +367,13 @@ if 'SEB options':
 
 
     # In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
-    plot_seb_options = data.PlotSEBOptions(
+    plot_seb_options = data.PlotSEOptions(
+        data_dir,
         seb_nat_data_dir, seb_nat_file_pat,
         seb_points,
         seb_bins_start, seb_bins_end, seb_bins_step,
         seb_num_syn_datasets, seb_num_percent_deviations,
-        seb_iterations_to_plot, seb_shift_distance,
-        seb_syn_dir, seb_syn_file_pat,
+        seb_iterations_to_plot, False, seb_shift_distance,
         seb_plot_dir, seb_plot_file_pat,
     )
 
@@ -374,9 +388,9 @@ if 'SEB options':
 
 
 if plot_syn_error_by_iteration or plot_all:
-    plot.plot_sei(plot_sei_options, data_dir)
+    plot.plot_sei(plot_sei_options)
 
 
 if plot_syn_error_by_bin or plot_all:
-    plot.plot_seb(plot_seb_options, data_dir)
+    plot.plot_seb(plot_seb_options)
 

@@ -1,6 +1,17 @@
 # This is the main launch file, containing settings, documentation, and execution calls
 
+"""
 
+1. Get nat and syn data, to get bin mapping
+2. Get nat and syn weights
+3. Get omnifold weights
+4. Multiply syn weights by omnifold weights
+5. Bin data
+6. Sum nat weights and syn weights
+7. Calculate percent error between nat and syn weights
+8. Plot by iteration/bin
+
+"""
 
 ########################################################################################################################
 
@@ -10,12 +21,12 @@
 
 
 
-from startrace import *
 
 from src.util.imports import check_imports
 if not check_imports():
     exit(1)
 
+from startrace import *
 import src.util.data as data
 import src.util.plot as plot
 
@@ -39,6 +50,7 @@ if 'Main settings':
 
     # Overrides all bools in this section to graph everything when set to True
     plot_all = False
+    # Note: this does not apply to plot_syn_error_by_test
 
     # Will be passed to other functions, by default returns the dir above this file (omnifold_plot.py)
     # To set a custom base dir, pass it into the function as a string
@@ -56,7 +68,7 @@ if 'Main settings':
     
     This will mainly give insight on weighted vs re-weighted performance, focusing on iteration performance.
     """
-    plot_syn_error_by_iteration = False
+    plot_syn_error_by_iteration = True
 
     # Plots % error of syn data compared to nat data by bin and iteration
     """
@@ -68,7 +80,21 @@ if 'Main settings':
     
     This plot will mainly give insight on weighted vs re-weighted performance, focusing on bin performance
     """
-    plot_syn_error_by_bin = True
+    plot_syn_error_by_bin = False
+
+    # Plots % error of syn data compared to nat by both bin and iteration, for a given dataset and tests
+    """
+    This generates two graphs per test one where:
+        y-axis: % error
+        x-axis: iteration
+    And another where
+        y-axis: % error
+        x-axis: bin
+        
+    Each point will track the performance by-iteration, where each graph represents one test. Note that this plot
+    is meant more for debugging purposes.
+    """
+    plot_syn_error_by_test = True
 
 
 
@@ -160,9 +186,7 @@ if 'SEI options':
         sei_plot_error_bars,
         '#e74c3c',
         0,
-        sei_num_tests,
-        sei_num_iterations,
-        sei_num_datapoints,
+        sei_num_tests, sei_num_iterations, sei_num_datapoints,
         'mock',
         Pattern([
             Token('mockdata.syn', 1, Iter(1, sei_num_syn_datasets, 1)),
@@ -185,7 +209,7 @@ if 'SEI options':
     ##############################
 
 
-    sei_plot_dir = 'plots/bins'
+    sei_plot_dir = 'plots/iterations'
 
     sei_plot_file_bins_str = []
     sei_bins = []
@@ -254,11 +278,9 @@ if 'SEB options':
     # for i in range(1, seb_num_iterations + 1):
     #     seb_iterations_to_plot.append(i)
 
-    # The distance between any 2 datapoints
-    # Note the individual values can be set by hand, but it's easier to do this one because it will be automatically applied
+    # Note if you change the point shift values (change from 0), this will be ignored
     seb_shift_distance = 3
 
-    # If std error bars should be shown
     seb_plot_error_bars = True
 
 
@@ -287,9 +309,7 @@ if 'SEB options':
         seb_plot_error_bars,
         '#3498db',
         0,
-        seb_num_tests,
-        seb_num_iterations,
-        seb_num_datapoints,
+        seb_num_tests, seb_num_iterations, seb_num_datapoints,
         'mock',
         Pattern([
             Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
@@ -312,9 +332,7 @@ if 'SEB options':
         seb_plot_error_bars,
         '#e74c3c',
         0,
-        seb_num_tests,
-        seb_num_iterations,
-        seb_num_datapoints,
+        seb_num_tests, seb_num_iterations, seb_num_datapoints,
         'mock',
         Pattern([
             Token('mockdata.syn', 1, Iter(1, seb_num_syn_datasets, 1)),
@@ -379,6 +397,146 @@ if 'SEB options':
 
 
 
+# SET (Synthetic Error by Test) plotting options
+############################################################
+
+
+
+# if 'SET options':
+#
+#     # Shared settings
+#     ##############################
+#
+#
+#     set_bins_start = 0
+#     set_bins_end = 100
+#     set_bins_step = 20
+#
+#     set_num_syn_datasets = 1
+#     set_num_percent_deviations = 1
+#     set_num_iterations = 5
+#     set_num_tests = 10
+#     set_num_datapoints = 150000
+#
+#     # To automatically plot all tests, uncomment the for loop below, and leave the array empty
+#     set_tests_to_plot = []
+#     for t in range(set_num_tests):
+#         set_tests_to_plot.append(t)
+#
+#     set_shift_distance = 0.25
+#
+#     set_plot_error_bars = True
+#
+#     # Nat data
+#     ##############################
+#
+#     set_nat_data_dir = 'mock'
+#     set_nat_file_pat = Pattern([
+#         Token('mockdata.nat.Logweighted2.N150000.root'),
+#     ])
+#
+#     # Datapoints
+#     ##############################
+#
+#     # Important Note! Never set different Point.num_iterations for any two Points. It can cause data loss and errors
+#
+#     set_points = []
+#
+#     # Weighted synthetic data
+#     set_points.append(data.Point(
+#         'weighted syn',
+#         '#3498db',
+#         set_plot_error_bars,
+#         '#3498db',
+#         0,
+#         set_num_iterations, set_num_tests, set_num_datapoints,
+#         'mock',
+#         Pattern([
+#             Token('mockdata.syn', 1, Iter(1, set_num_syn_datasets, 1)),
+#             Token('.', 1, Iter(1, set_num_percent_deviations, 1)),
+#             Token('Percent.Logweighted2.N150000.root')
+#         ]),
+#         'weights',
+#         Pattern([
+#             Token('Syn', 1, Iter(1, set_num_syn_datasets, 1)),
+#             Token('_', 1, Iter(1, set_num_percent_deviations, 1)),
+#             Token('Percent_Test', 1, Iter(1, set_num_tests, 1)),
+#             Token('.npy')
+#         ])
+#     ))
+#
+#     # Re-Weighted synthetic data
+#     set_points.append(data.Point(
+#         're-weighted syn',
+#         '#e74c3c',
+#         set_plot_error_bars,
+#         '#e74c3c',
+#         0,
+#         set_num_iterations, set_num_tests, set_num_datapoints,
+#         'mock',
+#         Pattern([
+#             Token('mockdata.syn', 1, Iter(1, set_num_syn_datasets, 1)),
+#             Token('.', 1, Iter(1, set_num_percent_deviations, 1)),
+#             Token('Percent.Logweighted2.N150000.root')
+#         ]),
+#         're_weights',
+#         Pattern([
+#             Token('Syn', 1, Iter(1, set_num_syn_datasets, 1)),
+#             Token('_', 1, Iter(1, set_num_percent_deviations, 1)),
+#             Token('Percent_Test', 1, Iter(1, set_num_tests, 1)),
+#             Token('.npy')
+#         ])
+#     ))
+#
+#     # Add more points using the above format
+#
+#
+#     # Syn data
+#     ##############################
+#
+#
+#     set_syn_dir = 'mock'
+#     set_syn_file_pat = Pattern([
+#         Token('mockdata.syn', 1, Iter(1, set_num_syn_datasets, 1)),
+#         Token('.', 1, Iter(1, set_num_percent_deviations, 1)),
+#         Token('Percent.Logweighted2.N150000.root')
+#     ])
+#
+#
+#     # Plot file pattern
+#     ##############################
+#
+#
+#     set_plot_dir = 'plots/bins'
+#     set_plot_file_tests_str = []
+#     for i in set_tests_to_plot:
+#         set_plot_file_tests_str.append(str(i))
+#     set_plot_file_pat = Pattern([
+#         Token('syn', 1, Iter(1, set_num_syn_datasets, 1)),
+#         Token('.', 1, Iter(1, set_num_percent_deviations, 1)),
+#         Token('Percent.Iteration'),
+#         Token(set_plot_file_tests_str),
+#         Token('.png')
+#     ])
+#
+#
+#     # set compile options
+#     ##############################
+#
+#
+#     # In theory, you (the user) should never have to change this, so don't touch unless you know what you're doing
+#     plot_set_options = data.PlotSEOptions(
+#         data_dir,
+#         set_nat_data_dir, set_nat_file_pat,
+#         set_points,
+#         set_bins_start, set_bins_end, set_bins_step,
+#         set_num_syn_datasets, set_num_percent_deviations,
+#         set_tests_to_plot, False, set_shift_distance,
+#         set_plot_dir, set_plot_file_pat,
+#     )
+
+
+
 ########################################################################################################################
 
 # Execution
@@ -394,3 +552,5 @@ if plot_syn_error_by_iteration or plot_all:
 if plot_syn_error_by_bin or plot_all:
     plot.plot_seb(plot_seb_options)
 
+# if plot_syn_error_by_test:
+#     plot.plot_set()

@@ -146,7 +146,7 @@ def get_syn_data(filepath):
 
 def get_syn_weights(filepath):
     if not does_file_exist(filepath):
-        raise Exception("Syn weights file does not exist: " + filepath)
+        raise Exception("Syn weights file does not exist: ", str(filepath))
 
     return np.load(filepath)
 

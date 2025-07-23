@@ -39,15 +39,15 @@ Each plot will show, averaging each level below it:
 class PlotOver(Enum):
     Set = 1
     Percent = 2
-    Iteration = 3
-    Test = 4
+    Test = 3
+    Iteration = 4
 
     Custom = 5
 
 
 
 @dataclass
-class OmnifoldSetting:
+class Dimension:
     average: bool
     name: str
     values: Optional[np.array] = None
@@ -60,10 +60,9 @@ class OmnifoldSetting:
         if self.values is None and (self.start is not None or self.end is not None or self.step is not None):
             self.values = np.arange(self.start, self.end + 1, self.step)
         elif self.values is not None and (self.start is not None or self.end is not None or self.step is not None):
-            print("Warning: OmnifoldSetting.values is set while .start, .end, or .step are set. Values will ignore the "
+            print("Warning: Dimension.values is set while .start, .end, or .step are set. Values will ignore the "
                   "numbers.")
-        # elif self.values is None and (self.start is None or self.end is None or self.step is None):
-        #     raise ValueError("Error: OmnifoldSetting.values cannot be None if .start, .end, and .step are not set")
+
 
 
 @dataclass
@@ -74,46 +73,47 @@ class Point:
     error_color: str
     shift: float
 
+    data_dir: str
+    nat_dir: str
+    nat_file_name: str
     syn_dir: str
     weight_dir: str
     syn_pat: Pattern
     weight_pat: Pattern
 
-    sets: OmnifoldSetting
-    percents: OmnifoldSetting
-    iterations: OmnifoldSetting
-    tests: OmnifoldSetting
+    bins: np.linspace
+
+    sets: Dimension
+    percents: Dimension
+    tests: Dimension
+    iterations: Dimension
     num_datapoints: int
+    average_bins: bool
 
 
 
-    syn_data: Optional[Annotated[npt.NDArray[np.float64], "shape: (sets, percents, num_datapoints)"]] = None
-    syn_weight: Optional[Annotated[npt.NDArray[np.float64], "shape: (sets, percents, num_datapoints)"]] = None
-    omnifold_weight: Optional[Annotated[npt.NDArray[np.float64], "shape: (sets, percents, iterations, tests, num_datapoints)"]] = None
-    sum_omnifold_weight: Optional[Annotated[npt.NDArray[np.float64], "shape: (sets, percents, iterations, tests, num_datapoints)"]] = None
+    nat_data: Optional[np.ndarray] = None
+    nat_weight: Optional[np.ndarray] = None
+    syn_data: Optional[np.ndarray] = None
+    syn_weight: Optional[np.ndarray] = None
+    omnifold_weight: Optional[np.ndarray] = None
 
-    # The shapes for these will be generated on runtime, to be (sets, percents, iterations, tests, num_bins)
+    sum_nat_weight: Optional[np.ndarray] = None
+    sum_omnifold_weight: Optional[np.ndarray] = None
     percent_error: Optional[np.ndarray] = None
-    std_error: Optional[np.ndarray] = None
+    std_dev: Optional[np.ndarray] = None
+
     percent_error_avg: Optional[np.ndarray] = None
-    std_error_avg: Optional[np.ndarray] = None
+    std_dev_avg: Optional[np.ndarray] = None
     x_values: Optional[np.ndarray] = None
+    x_label: Optional[str] = None
 
 
 
 @dataclass
 class PlotOptions:
-    plot_over: PlotOver
-
-    data_dir: str
-
-    nat_dir: str
-    nat_file_name: str
-
-    bins: np.linspace
-
-    shift: float
     points: list[Point]
+    shift: float
 
     plot_dir: str
     plot_pat: Pattern

@@ -1,3 +1,4 @@
+# Written by William Dean Coker
 # This file helps with data and files
 
 import os

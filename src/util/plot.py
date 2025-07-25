@@ -1,3 +1,4 @@
+# Written by William Dean Coker
 # This file contains methods to plot omnifold data according to settings from omnifold_plot.py
 
 # Plotting Steps:
@@ -378,6 +379,42 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
 
 
 
+def get_plot_patterns(sets: Dimension, percents: Dimension, tests: Dimension, iterations: Dimension, average_bins, bins):
+    path_tokens = []
+
+    # Determine which variable will be the x-axis
+    # Priority order: bins (lowest) -> iterations -> tests -> percents -> sets (highest)
+    is_x_axis = {
+        'bins': not average_bins,
+        'iterations': average_bins and not iterations.average,
+        'tests': average_bins and iterations.average and not tests.average,
+        'percents': average_bins and iterations.average and tests.average and not percents.average,
+        'sets': average_bins and iterations.average and tests.average and percents.average and not sets.average
+    }
+
+    # Add tokens based on whether they're averaged or x-axis
+    if not sets.average and not is_x_axis['sets']:
+        path_tokens.append(Token('Set', sets.values))
+
+    if not percents.average and not is_x_axis['percents']:
+        path_tokens.append(Token('Percent', percents.values))
+
+    if not tests.average and not is_x_axis['tests']:
+        path_tokens.append(Token('Test', tests.values))
+
+    if not iterations.average and not is_x_axis['iterations']:
+        path_tokens.append(Token('Iteration', iterations.values))
+
+    if not average_bins and not is_x_axis['bins']:
+        bins_str = [f"{bins[i]}-{bins[i + 1]}" for i in range(len(bins) - 1)]
+        path_tokens.append(Token('Bin'))
+        path_tokens.append(Token(bins_str))
+
+    path_tokens.append(Token('.png'))
+    return path_tokens, path_tokens[:-1]
+
+
+
 def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Pattern, plot_title_pat: Pattern, verbose = 1,
                 use_numpy_histogram = False, use_symmetric_percent_error = False,
                 calculate_std_dev_using_datapoints = False, normalize_std_dev = False,
@@ -641,38 +678,7 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
     ##############################
 
 
-    path_tokens = []
-    title_tokens = []
-    # Determine which variable will be the x-axis
-    # Priority order: bins (lowest) -> iterations -> tests -> percents -> sets (highest)
-    is_x_axis = {
-        'bins': not average_bins,
-        'iterations': average_bins and not average_iterations,
-        'tests': average_bins and average_iterations and not d_average_tests,
-        'percents': average_bins and average_iterations and d_average_tests and not average_percents,
-        'sets': average_bins and average_iterations and d_average_tests and average_percents and not average_sets
-    }
-
-    # Add tokens based on whether they're averaged or x-axis
-    if not average_sets and not is_x_axis['sets']:
-        path_tokens.append(Token('Set', d_sets.values))
-        title_tokens.append(Token('Set ', d_sets.values))
-    if not average_percents and not is_x_axis['percents']:
-        path_tokens.append(Token('Percent', d_percents.values))
-        title_tokens.append(Token(' Percent ', d_percents.values))
-    if not d_average_tests and not is_x_axis['tests']:
-        path_tokens.append(Token('Test', d_tests.values))
-        title_tokens.append(Token(' Test ', d_tests.values))
-    if not average_iterations and not is_x_axis['iterations']:
-        path_tokens.append(Token('Iteration', d_iterations.values))
-        title_tokens.append(Token(' Iteration ', d_iterations.values))
-    if not average_bins and not is_x_axis['bins']:
-        bins_str = [f"{d_bins[i]}-{d_bins[i + 1]}" for i in range(len(d_bins) - 1)]
-        path_tokens.append(Token('Bin'))
-        title_tokens.append(Token(' Bin '))
-        path_tokens.append(Token(bins_str))
-        title_tokens.append(Token(bins_str))
-    path_tokens.append(Token('.png'))
+    path_tokens, title_tokens = get_plot_patterns(d_sets, d_percents, d_tests, d_iterations, average_bins, d_bins)
 
     d_plot_pat = Pattern(path_tokens)
     d_plot_title_pat = Pattern(title_tokens)

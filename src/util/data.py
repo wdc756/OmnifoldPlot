@@ -215,3 +215,60 @@ def get_omnifold_weights(filepath):
 
     return np.load(filepath)
 
+
+def _verify_weight_file(file_path):
+    try:
+        # Load the file
+        data = np.load(file_path)
+        data = data[:, 1, :]  # Only look at the second element of dim 1
+
+        # Basic checks
+        print(f"File successfully loaded: {file_path}")
+        print(f"Array shape: {data.shape}")
+        print(f"Data type: {data.dtype}")
+
+        # Value checks
+        print("\nValue analysis:")
+        print(f"Number of non-zero elements: {np.count_nonzero(data)}")
+        print(f"Number of inf values: {np.sum(np.isinf(data))}")
+        print(f"Number of nan values: {np.sum(np.isnan(data))}")
+
+        # Distribution of non-zero values
+        nonzero = data[data != 0]
+        if len(nonzero) > 0:
+            print("\nNon-zero values statistics:")
+            print(f"Min non-zero: {np.min(nonzero)}")
+            print(f"Max non-zero: {np.max(nonzero)}")
+            print(f"Mean non-zero: {np.mean(nonzero)}")
+            print(f"Median non-zero: {np.median(nonzero)}")
+
+        return True
+    except Exception as e:
+        print(f"Error reading file: {str(e)}")
+        return False
+
+
+def _compare_weight_files(problem_file, good_file):
+    prob_data = np.load(problem_file)[:, 1, :]
+    good_data = np.load(good_file)[:, 1, :]
+
+    print("Shape comparison:")
+    print(f"Problem file: {prob_data.shape}")
+    print(f"Good file: {good_data.shape}")
+
+    print("\nValue ranges:")
+    print("Problem file:")
+    print(f"Min: {np.min(prob_data)}, Max: {np.max(prob_data)}")
+    print("Good file:")
+    print(f"Min: {np.min(good_data)}, Max: {np.max(good_data)}")
+
+    # Compare distribution characteristics
+    print("\nDistribution characteristics:")
+    for data, name in [(prob_data, "Problem"), (good_data, "Good")]:
+        nonzero = data[data != 0]
+        print(f"\n{name} file:")
+        print(f"Number of non-zero values: {len(nonzero)}")
+        if len(nonzero) > 0:
+            print(f"Non-zero value percentiles:")
+            for p in [0, 25, 50, 75, 100]:
+                print(f"{p}th percentile: {np.percentile(nonzero, p)}")

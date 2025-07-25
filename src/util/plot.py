@@ -58,7 +58,7 @@ def _recursive_print_array_stats(array: np.ndarray, name: str, depth: int, top=T
     if depth == 1:
         if top:
             print(name + ' stats')
-        print('  shape:', array.shape)
+            print('  shape:', array.shape)
         print('  array: ', array)
         print('  min:', np.min(array))
         print('  max:', np.max(array))
@@ -71,6 +71,7 @@ def _recursive_print_array_stats(array: np.ndarray, name: str, depth: int, top=T
     else:
         if top:
             print(name + ' stats')
+            print('shape:', array.shape)
         for i in range(array.shape[0]):
             _recursive_print_array_stats(array[i], name, depth - 1, False)
 
@@ -151,6 +152,7 @@ def _recursive_process_binned_sum(bins: np.linspace, data: np.ndarray, weight: n
 
             if verbose > 2:
                 _print_depth("Manual bin sums:" + str(bin_sums), depth)
+                _print_depth("Manual histogram bins: " + str(bins), depth)
 
         return bin_sums
     elif _get_depth(data) > 1:

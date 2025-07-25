@@ -27,13 +27,18 @@ from src.util.plot import *
 
 
 
+# Change these values here to generate plots if you're using the default omnifold plotting options, otherwise, set the
+#   bool just below here and scroll down to use the manual plots
 average_sets = False
 average_percents = False
 average_iterations = False
 average_bins = False
 verbose = 2
 
-# plot_defaults(average_sets, average_percents, average_iterations, average_bins, verbose)
+use_default_options = True
+
+if use_default_options:
+    plot_defaults(average_sets, average_percents, average_iterations, average_bins, verbose)
 
 
 
@@ -174,7 +179,7 @@ ex_plot_pat = Pattern([Token('set', ex_sets.values), Token('percent', ex_percent
 
 
 
-test_verbose = 1
+test_verbose = 3
 
 
 # Hack-y variables, don't touch unless you know what you're doing
@@ -235,10 +240,10 @@ else:
 if verbose > 2:
     print('bins:', test_bins)
 
-test_sets = Dimension(False, 'Set', None, 1, 1, 1)
-test_percents = Dimension(False, 'Percent', None, 1, 5, 1)
+test_sets = Dimension(False, 'Set', None, 2, 2, 1)
+test_percents = Dimension(False, 'Percent', None, 5, 5, 1)
 test_tests = Dimension(test_average_tests, 'Test', None, 1, 10, 1)
-test_iterations = Dimension(False, 'Iteration', None, 1, 5, 1)
+test_iterations = Dimension(False, 'Iteration', None, 3, 3, 1)
 test_datapoints = 150000
 
 
@@ -295,9 +300,9 @@ plot_options.append(PlotOptions(test_points, test_shift, test_plot_dir, test_plo
 ############################################################
 
 
-
-for option in plot_options:
-    plot_manual(option.points, option.shift, option.plot_dir, option.plot_pat, option.verbose,
-                option.use_numpy_histogram, option.use_symmetric_percent_error,
-                option.calculate_std_dev_using_datapoints, option.normalize_std_dev,
-                option.normalize_y_axis, option.use_symlog_yscale)
+if not use_default_options:
+    for option in plot_options:
+        plot_manual(option.points, option.shift, option.plot_dir, option.plot_pat, option.verbose,
+                    option.use_numpy_histogram, option.use_symmetric_percent_error,
+                    option.calculate_std_dev_using_datapoints, option.normalize_std_dev,
+                    option.normalize_y_axis, option.use_symlog_yscale)

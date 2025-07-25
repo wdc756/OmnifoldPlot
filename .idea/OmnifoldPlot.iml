@@ -7,7 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.venvw" />
       <excludeFolder url="file://$MODULE_DIR$/.venvl" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.13 (OmnifoldPlot)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.11 virtualenv at E:\documents\coding_projects\ACU_Projects\Atom_Smashers_25\OmnifoldPlot\.venvw" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

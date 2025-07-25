@@ -3,5 +3,8 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.12 virtualenv at /mnt/share/Documents/CodingProjects/ACU_Projects/Atom_Smashers_25/OmnifoldPlot/.venv (2)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (OmnifoldPlot)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 virtualenv at E:\documents\coding_projects\ACU_Projects\Atom_Smashers_25\OmnifoldPlot\.venvw" project-jdk-type="Python SDK" />
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="3" />
+  </component>
 </project>

@@ -118,6 +118,15 @@ class PlotOptions:
     plot_dir: str
     plot_pat: Pattern
 
+    verbose: int
+
+    use_numpy_histogram: bool = False
+    use_symmetric_percent_error: bool = False,
+    calculate_std_dev_using_datapoints: bool = False
+    normalize_std_dev: bool = False
+    normalize_y_axis: bool = False
+    use_symlog_yscale: bool = False
+
 
 
 
@@ -128,9 +137,8 @@ class PlotOptions:
 
 
 
-# These are left here so the user can't accidentally erase the type-hints
+# This is left here so the user can't accidentally erase the type-hints
 plot_options: list[PlotOptions] = []
-plot_options_to_use: list[int] = []
 
 
 

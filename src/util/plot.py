@@ -1,5 +1,18 @@
 # This file contains methods to plot omnifold data according to settings from omnifold_plot.py
 
+# Plotting Steps:
+"""
+1. Get nat and syn data, for bin mapping
+2. Get nat and syn weights
+3. Get omnifold weights
+4. Multiply syn weights by omnifold weights
+5. Bin unweighted nat and syn data, to get bin mappings
+6. Sum nat weights and syn weights
+7. Calculate percent error between nat and syn weights
+8. Apply bins to % error calculations
+9. Plot each point's data and save
+"""
+
 from collections.abc import Iterable
 import copy
 
@@ -43,6 +56,8 @@ def _print_depth(message: str, depth: int):
 
 def _recursive_print_array_stats(array: np.ndarray, name: str, depth: int, top=True):
     if depth == 1:
+        if top:
+            print(name + ' stats')
         print('  shape:', array.shape)
         print('  array: ', array)
         print('  min:', np.min(array))
@@ -284,19 +299,21 @@ def _get_y_axis_lim(points: list[Point]):
 
     return y_max, y_min
 
-def _get_x_axis(dimensions: list[Dimension]):
+def _get_x_axis(dimensions: list[Dimension], x_ticks):
+    x_tick = []
     x_values = []
     x_label = ''
 
     # Loop over all dimensions, outermost to innermost, setting the new x_values label accordingly
     for i in range(len(dimensions)):
         if not dimensions[i].average:
+            x_tick = x_ticks[i]
             x_values = dimensions[i].values
             x_label = dimensions[i].name
 
-    return x_values, x_label
+    return x_tick, x_values, x_label
 
-def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern, x_values: np.ndarray, x_label: str,
+def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern, x_ticks: np.ndarray, x_values: np.ndarray, x_label: str,
                            normalize_y_axis: bool, y_max: float, y_min: float, depth: int, indexes: list[int],
                            _top = True, use_symlog_yscale = False):
     if depth == 1:
@@ -315,12 +332,14 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
                          color=point.color, label=point.name)
 
         # Plot extras and save
+        plt.xticks(x_ticks)
         plt.xlabel(x_label)
         if use_symlog_yscale:
             plt.yscale('symlog', linthresh=1e1)
         plt.ylabel('Percent Error')
         if normalize_y_axis:
             plt.ylim(y_min, y_max)
+        plt.grid(axis='x')
         plt.title(plot_pat.get_pattern())
         plt.legend()
         plt.savefig(get_file_path([plot_dir, plot_pat.get_pattern()]))
@@ -336,7 +355,7 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
         for i in range(len(current)):
             # Insert try-catch here with _top to not throw any errors after the last plot has been made
             try:
-                _recursive_plot_points(points, plot_dir, plot_pat, x_values, x_label, y_max, y_min, depth - 1,
+                _recursive_plot_points(points, plot_dir, plot_pat, x_ticks, x_values, x_label, normalize_y_axis, y_max, y_min, depth - 1,
                                        indexes + [i], False, use_symlog_yscale)
             except ValueError as e:
                 if _top and i == len(current) - 1:
@@ -357,19 +376,6 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
                 use_numpy_histogram = False, use_symmetric_percent_error = False,
                 calculate_std_dev_using_datapoints = False, normalize_std_dev = False,
                 normalize_y_axis = False, use_symlog_yscale = False):
-
-    # Plotting Steps:
-    """
-    1. Get nat and syn data, for bin mapping
-    2. Get nat and syn weights
-    3. Get omnifold weights
-    4. Multiply syn weights by omnifold weights
-    5. Bin unweighted nat and syn data, to get bin mappings
-    6. Sum nat weights and syn weights
-    7. Calculate percent error between nat and syn weights
-    8. Apply bins to % error calculations
-    9. Plot each point's data and save
-    """
 
     # Data checks & setup
     ##############################
@@ -393,22 +399,29 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
 
         point.nat_data, point.nat_weight = get_nat_data_and_weights(get_file_path([point.data_dir, point.nat_dir,
                                                                                    point.nat_file_name]))
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.nat_data, 'nat_data', _get_depth(point.nat_data))
+        elif verbose > 1:
             print('nat data shape: ', point.nat_data.shape)
 
         point.syn_data = np.empty((len(point.sets.values), len(point.percents.values), point.num_datapoints))
         point.syn_weight = np.empty((len(point.sets.values), len(point.percents.values), point.num_datapoints))
-        for set in point.sets.values:
-            for percent in point.percents.values:
+        # Note that here we use enumerate() because all Dimension.values arrays can hold non-linear indexes
+        for s_idx, set in enumerate(point.sets.values):
+            for p_idx, percent in enumerate(point.percents.values):
                 syn_data, syn_weight = get_syn_data_and_weights(get_file_path([point.data_dir,
                                                                                point.syn_dir,point.syn_pat.get_pattern()]))
-                point.syn_data[set - 1][percent - 1] = syn_data
-                point.syn_weight[set - 1][percent - 1] = syn_weight
-        if verbose > 1:
+                point.syn_data[s_idx - 1][p_idx - 1] = syn_data
+                point.syn_weight[s_idx - 1][p_idx - 1] = syn_weight
+        if verbose > 2:
+            _recursive_print_array_stats(point.syn_data, 'syn_data', _get_depth(point.syn_data))
+        elif verbose > 1:
             print('syn data shape: ', point.syn_data.shape)
 
         _fill_omnifold_weight(point)
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.omnifold_weight, 'omnifold_weight', _get_depth(point.omnifold_weight))
+        elif verbose > 1:
             print('omnifold weights shape: ', point.omnifold_weight.shape)
 
 
@@ -424,16 +437,22 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
 
         point.nat_sum_weight = _recursive_process_binned_sum(point.bins, point.nat_data, point.nat_weight, verbose,
                                                              _get_depth(point.nat_weight), use_numpy_histogram)
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.nat_sum_weight, 'sum_nat_weight', _get_depth(point.nat_sum_weight))
+        elif verbose > 1:
             print('nat sum weight shape: ', point.nat_sum_weight.shape)
         point.sum_omnifold_weight = _recursive_process_binned_sum(point.bins, point.syn_data, point.omnifold_weight, verbose,
                                                                   _get_depth(point.omnifold_weight), use_numpy_histogram)
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.sum_omnifold_weight, 'sum_omnifold_weight', _get_depth(point.sum_omnifold_weight))
+        elif verbose > 1:
             print('sum omnifold weight shape: ', point.sum_omnifold_weight.shape)
 
         point.percent_error = _recursive_process_percent_error(point.nat_sum_weight, point.sum_omnifold_weight,
                                                                _get_depth(point.sum_omnifold_weight), use_symmetric_percent_error)
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.percent_error, 'percent_error', _get_depth(point.percent_error))
+        elif verbose > 1:
             print('percent error shape: ', point.percent_error.shape)
 
         if calculate_std_dev_using_datapoints:
@@ -442,17 +461,25 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
         else:
             std_dev_percent_error = np.transpose(point.percent_error, (0, 1, 3, 4, 2))
             point.std_dev = _process_std_dev(std_dev_percent_error, alt_averages, normalize_std_dev)
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.std_dev, 'std_dev', _get_depth(point.std_dev))
+        elif verbose > 1:
             print('std. deviation shape: ', point.std_dev.shape)
 
         point.percent_error_avg = _average_data(point.percent_error, averages)
-        if verbose > 1:
+        if verbose > 2:
+            _recursive_print_array_stats(point.percent_error_avg, 'percent_error_avg', _get_depth(point.percent_error_avg))
+        elif verbose > 1:
             print('percent error avg shape: ', point.percent_error_avg.shape)
+
         if calculate_std_dev_using_datapoints:
             point.std_dev_avg = _average_data(point.std_dev, averages)
         else:
             point.std_dev_avg = point.std_dev
-        if verbose > 1:
+
+        if verbose > 2:
+            _recursive_print_array_stats(point.std_dev_avg, 'std_dev_avg', _get_depth(point.std_dev_avg))
+        elif verbose > 1:
             print('std. deviation avg shape: ', point.std_dev_avg.shape)
 
         if verbose > 1:
@@ -471,11 +498,13 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
     if len(unique_depths) > 1:
         raise ValueError('Error: points have different depths (average flags)')
 
-    # Get common x-axis values
+    # Get x-axis values
     bin_centers = (points[0].bins[:-1] + points[0].bins[1:]) / 2
     bins_dim = Dimension(points[0].average_bins, 'Bins', bin_centers)
     dimensions = [points[0].sets, points[0].percents, points[0].iterations, bins_dim, points[0].tests]
-    x_values, x_label = _get_x_axis(dimensions)
+    x_ticks = [points[0].sets.values, points[0].percents.values, points[0].iterations.values, points[0].bins,
+               points[0].tests.values]
+    x_tick, x_values, x_label = _get_x_axis(dimensions, x_ticks)
     x_values = np.asarray(x_values)
     if len(x_values) < 2:
         raise ValueError('Error: plot.points has averaged too many dimensions (no x-axis values)')
@@ -490,8 +519,8 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
 
     if verbose > 0:
         print('plotting points')
-    _recursive_plot_points(points, plot_dir, plot_pat, x_values, x_label, normalize_y_axis, y_max, y_min, depths[0], [],
-                           use_symlog_yscale=use_symlog_yscale)
+    _recursive_plot_points(points, plot_dir, plot_pat, x_tick, x_values, x_label, normalize_y_axis, y_max, y_min,
+                           depths[0], [], use_symlog_yscale=use_symlog_yscale)
 
 
 
@@ -536,14 +565,14 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
     d_syn_dir = 'mock'
     d_weight_dir = 'weights'
     d_re_weight_dir = 're_weights'
-    d_plot_dir = d_data_dir + '/plots/bins'
+    d_plot_dir = d_data_dir + '/plots'
 
 
     # Omnifold settings
     ##############################
 
 
-    d_bins_start = 1
+    d_bins_start = 0
     d_bins_end = 100
 
     d_use_bins_step = False
@@ -559,7 +588,7 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
     d_sets = Dimension(average_sets, 'Set', None, 1, 2, 1)
     d_percents = Dimension(average_percents, 'Percent', None, 1, 5, 1)
     d_tests = Dimension(d_average_tests, 'Test', None, 1, 10, 1)
-    d_iterations = Dimension(average_iterations, 'Iteration', None, 5, 5, 1)
+    d_iterations = Dimension(average_iterations, 'Iteration', None, 1, 5, 1)
     d_datapoints = 150000
 
 
@@ -579,7 +608,7 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
             d_bins, d_sets, d_percents, d_tests, d_iterations, d_datapoints, average_bins
         ),
         Point(
-            're weighted syn', '#45b39d', d_plot_error_bars, '#45b39d', 0.0, d_data_dir, d_nat_dir,
+            're weighted syn', '#FB2C36', d_plot_error_bars, '#FB2C36', 0.0, d_data_dir, d_nat_dir,
             d_nat_file_name, d_syn_dir, d_re_weight_dir,
             Pattern([Token('mockdata.syn', d_sets.values), Token('.', d_percents.values),
                      Token('Percent.Logweighted2.N' + str(d_datapoints) + '.root')]),
@@ -596,17 +625,16 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
     ##############################
 
 
-    # This might need some more work, I'm just not sure if this covers every possibility
     tokens = []
     if not average_sets:
         tokens.append(Token('Set', d_sets.values))
-    if not average_percents and not average_iterations:
+    if not average_percents and (not d_average_tests or not average_iterations or not average_bins):
         tokens.append(Token('Percent', d_percents.values))
-    if not d_average_tests:
+    if not d_average_tests and (not average_iterations or not average_bins):
         tokens.append(Token('Test', d_tests.values))
     if not average_iterations and not average_bins:
         tokens.append(Token('Iteration', d_iterations.values))
-    if not average_bins and not average_sets and not average_percents and not d_average_tests and not average_iterations:
+    if not average_bins:
         bins_str = []
         for i in range(len(d_bins) - 1):
             bins_str.append(str(d_bins[i]) + '-' + str(d_bins[i + 1]))
@@ -622,7 +650,6 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
                 break
     elif verbose > 1:
         print(d_plot_pat.get_pattern())
-
 
     plot_manual(d_points, d_shift, d_plot_dir, d_plot_pat, verbose,
                 d_use_numpy_histogram, d_use_symmetric_percent_error, d_calculate_std_dev_using_datapoints,

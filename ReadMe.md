@@ -1,8 +1,6 @@
-This project was made using tools and data from ACU Atom Smashers, in the summer of 2025
+# Omnifold Plot
+This project was made using tools and data from ACU Atom Smashers, in the summer of 2025, by William Coker
 
-
-
-Explain what this project does
 
 Explain omnifold
 

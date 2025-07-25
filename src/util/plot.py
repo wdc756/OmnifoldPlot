@@ -315,8 +315,9 @@ def _get_x_axis(dimensions: list[Dimension], x_ticks):
 
     return x_tick, x_values, x_label
 
-def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern, x_ticks: np.ndarray, x_values: np.ndarray, x_label: str,
-                           normalize_y_axis: bool, y_max: float, y_min: float, depth: int, indexes: list[int],
+def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern, plot_title_pat: Pattern,
+                           x_ticks: np.ndarray, x_values: np.ndarray, x_label: str, normalize_y_axis: bool,
+                           y_max: float, y_min: float, depth: int, indexes: list[int],
                            _top = True, use_symlog_yscale = False):
     if depth == 1:
         # Base case: we have a 1D array to plot for the current points
@@ -342,7 +343,7 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
         if normalize_y_axis:
             plt.ylim(y_min, y_max)
         plt.grid(axis='x')
-        plt.title(plot_pat.get_pattern())
+        plt.title(plot_title_pat.get_pattern())
         plt.legend()
         plt.savefig(get_file_path([plot_dir, plot_pat.get_pattern()]))
         plt.show()
@@ -351,13 +352,16 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
         # Increment plot pat
         if not plot_pat.increment():
             raise ValueError('Error: plot.plot_pat could not increment')
+        if not plot_title_pat.increment():
+            raise ValueError('Error: plot.plot_title_pat could not increment')
     else:
         # Recursive case: we have an ND array and need to go deeper
         current = _recursive_index(points[0].percent_error_avg, indexes)
         for i in range(len(current)):
             # Insert try-catch here with _top to not throw any errors after the last plot has been made
             try:
-                _recursive_plot_points(points, plot_dir, plot_pat, x_ticks, x_values, x_label, normalize_y_axis, y_max, y_min, depth - 1,
+                _recursive_plot_points(points, plot_dir, plot_pat, plot_title_pat, x_ticks, x_values, x_label,
+                                       normalize_y_axis, y_max, y_min, depth - 1,
                                        indexes + [i], False, use_symlog_yscale)
             except ValueError as e:
                 if _top and i == len(current) - 1:
@@ -374,7 +378,7 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
 
 
 
-def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Pattern, verbose = 1,
+def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Pattern, plot_title_pat: Pattern, verbose = 1,
                 use_numpy_histogram = False, use_symmetric_percent_error = False,
                 calculate_std_dev_using_datapoints = False, normalize_std_dev = False,
                 normalize_y_axis = False, use_symlog_yscale = False):
@@ -521,7 +525,7 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
 
     if verbose > 0:
         print('plotting points')
-    _recursive_plot_points(points, plot_dir, plot_pat, x_tick, x_values, x_label, normalize_y_axis, y_max, y_min,
+    _recursive_plot_points(points, plot_dir, plot_pat, plot_title_pat, x_tick, x_values, x_label, normalize_y_axis, y_max, y_min,
                            depths[0], [], use_symlog_yscale=use_symlog_yscale)
 
 
@@ -567,6 +571,7 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
     d_syn_dir = 'mock'
     d_weight_dir = 'weights'
     d_re_weight_dir = 're_weights'
+    d_spline_weight_dir = 'spline_weights'
     d_plot_dir = d_data_dir + '/plots'
 
 
@@ -579,7 +584,7 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
 
     d_use_bins_step = False
     d_bins_step = 20
-    d_bins_count = 20
+    d_bins_count = 10
     if d_use_bins_step:
         d_bins = np.arange(d_bins_start, d_bins_end + d_bins_step, d_bins_step)
     else:
@@ -601,7 +606,7 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
     d_plot_error_bars = True
     d_points = [
         Point(
-            'weighted syn', '#5dade2', d_plot_error_bars, '#5dade2', 0.0, d_data_dir, d_nat_dir,
+            'weighted', '#5dade2', d_plot_error_bars, '#5dade2', 0.0, d_data_dir, d_nat_dir,
             d_nat_file_name, d_syn_dir, d_weight_dir,
             Pattern([Token('mockdata.syn', d_sets.values), Token('.', d_percents.values),
                      Token('Percent.Logweighted2.N' + str(d_datapoints) + '.root')]),
@@ -610,8 +615,17 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
             d_bins, d_sets, d_percents, d_tests, d_iterations, d_datapoints, average_bins
         ),
         Point(
-            're weighted syn', '#FB2C36', d_plot_error_bars, '#FB2C36', 0.0, d_data_dir, d_nat_dir,
+            're weighted', '#FB2C36', d_plot_error_bars, '#FB2C36', 0.0, d_data_dir, d_nat_dir,
             d_nat_file_name, d_syn_dir, d_re_weight_dir,
+            Pattern([Token('mockdata.syn', d_sets.values), Token('.', d_percents.values),
+                     Token('Percent.Logweighted2.N' + str(d_datapoints) + '.root')]),
+            Pattern([Token('Syn', d_sets.values), Token('_', d_percents.values), Token('Percent_Test', d_tests.values),
+                     Token('.npy')]),
+            d_bins, d_sets, d_percents, d_tests, d_iterations, d_datapoints, average_bins
+        ),
+        Point(
+            'spline weighted', '#31C950', d_plot_error_bars, '#31C950', 0.0, d_data_dir, d_nat_dir,
+            d_nat_file_name, d_syn_dir, d_spline_weight_dir,
             Pattern([Token('mockdata.syn', d_sets.values), Token('.', d_percents.values),
                      Token('Percent.Logweighted2.N' + str(d_datapoints) + '.root')]),
             Pattern([Token('Syn', d_sets.values), Token('_', d_percents.values), Token('Percent_Test', d_tests.values),
@@ -620,39 +634,62 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
         )
     ]
     # The distance between points on the x-axis, measured by the difference between x-ticks
-    d_shift = 0.25
+    d_shift = 0.2
 
 
     # Plotting
     ##############################
 
 
-    tokens = []
-    if not average_sets:
-        tokens.append(Token('Set', d_sets.values))
-    if not average_percents and (not d_average_tests or not average_iterations or not average_bins):
-        tokens.append(Token('Percent', d_percents.values))
-    if not d_average_tests and (not average_iterations or not average_bins):
-        tokens.append(Token('Test', d_tests.values))
-    if not average_iterations and not average_bins:
-        tokens.append(Token('Iteration', d_iterations.values))
-    if not average_bins:
-        bins_str = []
-        for i in range(len(d_bins) - 1):
-            bins_str.append(str(d_bins[i]) + '-' + str(d_bins[i + 1]))
-        tokens.append(Token('Bin'))
-        tokens.append(Token(bins_str))
-    tokens.append(Token('.png'))
-    d_plot_pat = Pattern(tokens)
+    path_tokens = []
+    title_tokens = []
+    # Determine which variable will be the x-axis
+    # Priority order: bins (lowest) -> iterations -> tests -> percents -> sets (highest)
+    is_x_axis = {
+        'bins': not average_bins,
+        'iterations': average_bins and not average_iterations,
+        'tests': average_bins and average_iterations and not d_average_tests,
+        'percents': average_bins and average_iterations and d_average_tests and not average_percents,
+        'sets': average_bins and average_iterations and d_average_tests and average_percents and not average_sets
+    }
+
+    # Add tokens based on whether they're averaged or x-axis
+    if not average_sets and not is_x_axis['sets']:
+        path_tokens.append(Token('Set', d_sets.values))
+        title_tokens.append(Token('Set ', d_sets.values))
+    if not average_percents and not is_x_axis['percents']:
+        path_tokens.append(Token('Percent', d_percents.values))
+        title_tokens.append(Token(' Percent ', d_percents.values))
+    if not d_average_tests and not is_x_axis['tests']:
+        path_tokens.append(Token('Test', d_tests.values))
+        title_tokens.append(Token(' Test ', d_tests.values))
+    if not average_iterations and not is_x_axis['iterations']:
+        path_tokens.append(Token('Iteration', d_iterations.values))
+        title_tokens.append(Token(' Iteration ', d_iterations.values))
+    if not average_bins and not is_x_axis['bins']:
+        bins_str = [f"{d_bins[i]}-{d_bins[i + 1]}" for i in range(len(d_bins) - 1)]
+        path_tokens.append(Token('Bin'))
+        title_tokens.append(Token(' Bin '))
+        path_tokens.append(Token(bins_str))
+        title_tokens.append(Token(bins_str))
+    path_tokens.append(Token('.png'))
+
+    d_plot_pat = Pattern(path_tokens)
+    d_plot_title_pat = Pattern(title_tokens)
+    if verbose > 1:
+        print('Plot patterns: ')
     if verbose > 2:
         t_plot_pat = copy.deepcopy(d_plot_pat)
+        t_plot_title_pat = Pattern(title_tokens)
         while True:
             print(t_plot_pat.get_pattern())
-            if not t_plot_pat.increment():
+            print(t_plot_title_pat.get_pattern())
+            if not t_plot_pat.increment() or not t_plot_title_pat.increment():
                 break
     elif verbose > 1:
         print(d_plot_pat.get_pattern())
+        print(d_plot_title_pat.get_pattern())
 
-    plot_manual(d_points, d_shift, d_plot_dir, d_plot_pat, verbose,
+    plot_manual(d_points, d_shift, d_plot_dir, d_plot_pat, d_plot_title_pat, verbose,
                 d_use_numpy_histogram, d_use_symmetric_percent_error, d_calculate_std_dev_using_datapoints,
                 d_normalize_std_dev, d_normalize_y_axis, d_use_symlog_yscale)

@@ -117,6 +117,7 @@ class PlotOptions:
 
     plot_dir: str
     plot_pat: Pattern
+    plot_title_pat: Pattern
 
     verbose: int
 
@@ -216,6 +217,13 @@ def get_omnifold_weights(filepath):
     return np.load(filepath)
 
 
+
+############################################################
+# Data processing
+############################################################
+
+
+
 def _verify_weight_file(file_path):
     try:
         # Load the file
@@ -246,7 +254,6 @@ def _verify_weight_file(file_path):
     except Exception as e:
         print(f"Error reading file: {str(e)}")
         return False
-
 
 def _compare_weight_files(problem_file, good_file):
     prob_data = np.load(problem_file)[:, 1, :]

@@ -27,8 +27,9 @@ from src.util.plot import *
 
 
 
-# Change these values here to generate plots if you're using the default omnifold plotting options, otherwise, set the
-#   bool just below here and scroll down to use the manual plots
+# If you're using the default project structure as laid out in the ReadMe, then set these average bools and run the
+#   program. If your setup is different, or you want more control, disable use_default_options and scroll down to the
+#   manual plotting setup
 average_sets = False
 average_percents = False
 average_iterations = False

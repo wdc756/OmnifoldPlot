@@ -411,7 +411,9 @@ def get_plot_patterns(sets: Dimension, percents: Dimension, tests: Dimension, it
         path_tokens.append(Token(bins_str))
 
     path_tokens.append(Token('.png'))
-    return path_tokens, path_tokens[:-1]
+    # Deep copy here to avoid re-using the exact same tokens (overwrite/race)
+    title_tokens = copy.deepcopy(path_tokens[:-1])
+    return path_tokens, title_tokens
 
 
 

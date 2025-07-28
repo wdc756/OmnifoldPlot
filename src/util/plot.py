@@ -218,7 +218,7 @@ def _recursive_process_std_dev_datapoint(bins: np.linspace, data: np.ndarray, we
             else:
                 std_devs[bin_idx] = 0.0  # Single point or empty bin
 
-        return std_devs
+        return std_devs * 100.0 # convert to percent
     elif _get_depth(data) > 1:
         # Recursive case 1: go deeper into data and weights
         result = []

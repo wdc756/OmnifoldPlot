@@ -56,7 +56,7 @@ if use_default_options:
 
 
 
-ex_verbose = 2
+ex_verbose = 3
 
 
 # Hack-y variables, don't touch unless you know what you're doing
@@ -189,7 +189,9 @@ ex_points = [
 ex_shift = 0.2
 
 # This function will generate both plot patterns, but you can also create your own and overwrite this call
-ex_plot_pat, ex_plot_title_pat = get_plot_patterns(ex_sets, ex_percents, ex_tests, ex_iterations, ex_average_bins, ex_bins)
+ex_plot_tokens, ex_plot_title_tokens = get_plot_patterns(ex_sets, ex_percents, ex_tests, ex_iterations, ex_average_bins, ex_bins)
+ex_plot_pat = Pattern(ex_plot_tokens)
+ex_plot_title_pat = Pattern(ex_plot_title_tokens)
 
 
 
@@ -207,6 +209,7 @@ plot_options.append(PlotOptions(ex_points, ex_shift, ex_plot_dir, ex_plot_pat, e
 ############################################################
 # Plot all manual entries
 ############################################################
+
 
 
 if not use_default_options:

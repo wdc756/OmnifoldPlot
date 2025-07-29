@@ -56,7 +56,7 @@ if use_default_options:
 
 
 
-ex_verbose = 3
+ex_verbose = 2
 
 
 # Hack-y variables, don't touch unless you know what you're doing
@@ -130,7 +130,7 @@ ex_sets = Dimension(
     values=None, start=1, end=2, step=1)
 ex_percents = Dimension(False, 'Percent', None, 1, 5, 1)
 ex_tests = Dimension(ex_average_tests, 'Test', None, 1, 10, 1)
-ex_iterations = Dimension(False, 'Iteration', None, 1, 5, 1)
+ex_iterations = Dimension(False, 'Iteration', None, 5, 5, 1)
 ex_average_bins = False
 ex_datapoints = 150000
 

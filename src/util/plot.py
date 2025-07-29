@@ -344,7 +344,8 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
         if normalize_y_axis:
             plt.ylim(y_min, y_max)
         plt.grid(axis='x')
-        plt.title(plot_title_pat.get_pattern())
+        if plot_title_pat is not None and len(plot_title_pat.tokens) > 1:
+            plt.title(plot_title_pat.get_pattern())
         plt.legend()
         plt.savefig(get_file_path([plot_dir, plot_pat.get_pattern()]))
         plt.show()
@@ -353,8 +354,9 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
         # Increment plot pat
         if not plot_pat.increment():
             raise ValueError('Error: plot.plot_pat could not increment')
-        if not plot_title_pat.increment():
-            raise ValueError('Error: plot.plot_title_pat could not increment')
+        if plot_title_pat is not None and len(plot_title_pat.tokens) > 1:
+            if not plot_title_pat.increment():
+                raise ValueError('Error: plot.plot_title_pat could not increment')
     else:
         # Recursive case: we have an ND array and need to go deeper
         current = _recursive_index(points[0].percent_error_avg, indexes)

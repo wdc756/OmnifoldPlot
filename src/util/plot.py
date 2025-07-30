@@ -317,7 +317,7 @@ def _get_x_axis(dimensions: list[Dimension], x_ticks):
     return x_tick, x_values, x_label
 
 def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern, plot_title_pat: Pattern,
-                           x_ticks: np.ndarray, x_values: np.ndarray, x_label: str, normalize_y_axis: bool,
+                           x_ticks: np.ndarray, x_values: np.ndarray, x_label: str, normalize_y_axis: bool, show_plots: bool,
                            y_max: float, y_min: float, depth: int, indexes: list[int],
                            _top = True, use_symlog_yscale = False):
     if depth == 1:
@@ -348,7 +348,8 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
             plt.title(plot_title_pat.get_pattern())
         plt.legend()
         plt.savefig(get_file_path([plot_dir, plot_pat.get_pattern()]))
-        plt.show()
+        if show_plots:
+            plt.show()
         plt.close()
 
         # Increment plot pat
@@ -364,7 +365,7 @@ def _recursive_plot_points(points: list[Point], plot_dir: str, plot_pat: Pattern
             # Insert try-catch here with _top to not throw any errors after the last plot has been made
             try:
                 _recursive_plot_points(points, plot_dir, plot_pat, plot_title_pat, x_ticks, x_values, x_label,
-                                       normalize_y_axis, y_max, y_min, depth - 1,
+                                       normalize_y_axis, show_plots, y_max, y_min, depth - 1,
                                        indexes + [i], False, use_symlog_yscale)
             except ValueError as e:
                 if _top and i == len(current) - 1:
@@ -422,7 +423,7 @@ def get_plot_patterns(sets: Dimension, percents: Dimension, tests: Dimension, it
 def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Pattern, plot_title_pat: Pattern, verbose = 1,
                 use_numpy_histogram = False, use_symmetric_percent_error = False,
                 calculate_std_dev_using_datapoints = False, normalize_std_dev = False,
-                normalize_y_axis = False, use_symlog_yscale = False):
+                normalize_y_axis = False, use_symlog_yscale = False, show_plots = False):
 
     # Data checks & setup
     ##############################
@@ -566,13 +567,14 @@ def plot_manual(points: list[Point], shift: float, plot_dir: str, plot_pat: Patt
 
     if verbose > 0:
         print('plotting points')
-    _recursive_plot_points(points, plot_dir, plot_pat, plot_title_pat, x_tick, x_values, x_label, normalize_y_axis, y_max, y_min,
+    _recursive_plot_points(points, plot_dir, plot_pat, plot_title_pat, x_tick, x_values, x_label, normalize_y_axis,
+                           show_plots, y_max, y_min,
                            depths[0], [], use_symlog_yscale=use_symlog_yscale)
 
 
 
 def plot_defaults(average_sets: bool, average_percents: bool, average_iterations: bool,
-                  average_bins: bool, verbose: int):
+                  average_bins: bool, show_plots = False, verbose: int = 2):
 
 
     # Hack-y variables, don't touch unless you know what you're doing
@@ -702,4 +704,4 @@ def plot_defaults(average_sets: bool, average_percents: bool, average_iterations
 
     plot_manual(d_points, d_shift, d_plot_dir, d_plot_pat, d_plot_title_pat, verbose,
                 d_use_numpy_histogram, d_use_symmetric_percent_error, d_calculate_std_dev_using_datapoints,
-                d_normalize_std_dev, d_normalize_y_axis, d_use_symlog_yscale)
+                d_normalize_std_dev, d_normalize_y_axis, d_use_symlog_yscale, show_plots)

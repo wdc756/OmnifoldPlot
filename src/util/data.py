@@ -121,6 +121,7 @@ class PlotOptions:
     plot_title_pat: Pattern
 
     verbose: int
+    show_plots: bool
 
     use_numpy_histogram: bool = False
     use_symmetric_percent_error: bool = False,

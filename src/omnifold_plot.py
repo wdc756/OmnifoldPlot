@@ -34,11 +34,12 @@ average_percents = False
 average_iterations = False
 average_bins = False
 verbose = 2
+show_plots = False
 
 use_default_options = True
 
 if use_default_options:
-    plot_defaults(average_sets, average_percents, average_iterations, average_bins, verbose)
+    plot_defaults(average_sets, average_percents, average_iterations, average_bins, show_plots, verbose)
 
 
 
@@ -57,6 +58,7 @@ if use_default_options:
 
 
 ex_verbose = 2
+ex_show_plots = False
 
 
 # Hack-y variables, don't touch unless you know what you're doing
@@ -199,7 +201,7 @@ ex_plot_title_pat = Pattern(ex_plot_title_tokens)
 ##############################
 
 
-plot_options.append(PlotOptions(ex_points, ex_shift, ex_plot_dir, ex_plot_pat, ex_plot_title_pat, ex_verbose,
+plot_options.append(PlotOptions(ex_points, ex_shift, ex_plot_dir, ex_plot_pat, ex_plot_title_pat, ex_verbose, ex_show_plots,
                                 ex_use_numpy_histogram, ex_use_symmetric_percent_error,
                                 ex_calculate_std_dev_using_datapoints, ex_normalize_std_dev, ex_normalize_y_axis,
                                 ex_use_symlog_yscale))
@@ -217,4 +219,4 @@ if not use_default_options:
         plot_manual(option.points, option.shift, option.plot_dir, option.plot_pat, option.plot_title_pat, option.verbose,
                     option.use_numpy_histogram, option.use_symmetric_percent_error,
                     option.calculate_std_dev_using_datapoints, option.normalize_std_dev,
-                    option.normalize_y_axis, option.use_symlog_yscale)
+                    option.normalize_y_axis, option.use_symlog_yscale, option.show_plots)

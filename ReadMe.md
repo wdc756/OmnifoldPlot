@@ -46,7 +46,7 @@ dir entirely, mainly because the datafiles can become quite large and there's no
 After setting up your local files using the structure above, you can run the program by calling:
 
 ```bash
-python /src/omnifold_plot.py
+python ./src/omnifold_plot.py
 ```
 
 To change what it outputs, open ```omnifold_plot.py```, and change the ```average_*``` 

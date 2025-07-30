@@ -33,7 +33,8 @@ data
 ├── spline_weights - (Omnifold spline-weights)
 └── plots - (to be filled)
 ```
-
+Note that the reason I don't just include the data directories is because I've set up .gitignore to ignore the 
+dir entirely, mainly because the datafiles can become quite large and there's no reason to upload them here.
 
 
 ## Usage

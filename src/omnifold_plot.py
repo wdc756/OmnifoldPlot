@@ -10,11 +10,11 @@
 
 
 # imports.check_imports will attempt to import all packages and throw errors if any are missing
-from src.util.imports import check_imports
+from util.imports import check_imports
 if not check_imports():
     exit(1)
 
-from src.util.plot import *
+from util.plot import *
 
 
 

@@ -168,7 +168,7 @@ def get_base_dir(new_base_dir: str=''):
     if _cached_base_dir is not None:
         return _cached_base_dir
 
-    path = os.path.dirname(os.path.abspath(__file__))
+    path = str(os.path.dirname(os.path.abspath(__file__)))
     _cached_base_dir = os.path.join(path, '../../')
     return _cached_base_dir
 
